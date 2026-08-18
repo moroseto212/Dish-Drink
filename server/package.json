@@ -1,0 +1,39 @@
+{
+  "name": "dish-drink-server",
+  "version": "1.0.0",
+  "description": "Dish & Drink API server - platform resep hibrida ala Instagram",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "prisma:migrate": "node node_modules/prisma/build/index.js migrate dev",
+    "prisma:generate": "node node_modules/prisma/build/index.js generate",
+    "prisma:studio": "node node_modules/prisma/build/index.js studio"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.0",
+    "connect-pg-simple": "^9.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.2.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "prisma@5.22.0": true
+  }
+}

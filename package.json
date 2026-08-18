@@ -1,0 +1,11 @@
+{
+  "name": "dish-drink",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dish & Drink - platform resep hibrida ala Instagram",
+  "scripts": {
+    "dev:server": "cd server && node --watch src/index.js",
+    "dev:client": "cd client && node node_modules/vite/bin/vite.js",
+    "install:all": "npm --prefix server install && npm --prefix client install"
+  }
+}
