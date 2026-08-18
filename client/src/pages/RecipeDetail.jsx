@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { recipeApi } from '../api.js';
+import { recipeApi, conversationApi } from '../api.js';
+import Icon from '../components/Icon.jsx';
 
 const difficultyLabel = { EASY: 'Mudah', MEDIUM: 'Sedang', HARD: 'Sulit' };
 const difficultyColor = {
@@ -23,6 +24,18 @@ export default function RecipeDetail() {
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [ratingBusy, setRatingBusy] = useState(false);
+  const [showShoppingList, setShowShoppingList] = useState(false);
+  const [checkedItems, setCheckedItems] = useState({});
+
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerTarget, setTimerTarget] = useState(null);
+  const timerRef = useRef(null);
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [shareLoading, setShareLoading] = useState(false);
 
   useEffect(() => {
     recipeApi
@@ -133,6 +146,111 @@ export default function RecipeDetail() {
 
   const handleDeleteComment = (commentId) => {
     setCommentToDelete(commentId);
+  };
+
+  const handleRate = async (value) => {
+    if (!requireAuth() || ratingBusy || !recipe) return;
+    setRatingBusy(true);
+    try {
+      if (recipe.myRating === value) {
+        const data = await recipeApi.unrate(recipe.id);
+        setRecipe((prev) => ({ ...prev, myRating: data.myRating, avgRating: data.avgRating, ratingCount: data.ratingCount }));
+      } else {
+        const data = await recipeApi.rate(recipe.id, value);
+        setRecipe((prev) => ({ ...prev, myRating: data.myRating, avgRating: data.avgRating, ratingCount: data.ratingCount }));
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRatingBusy(false);
+    }
+  };
+
+  const toggleShoppingItem = (idx) => {
+    setCheckedItems((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const copyShoppingList = () => {
+    if (!recipe) return;
+    const lines = recipe.ingredients.map((ing) => {
+      const item = typeof ing === 'string' ? { name: ing } : ing;
+      return `- ${item.amount ? item.amount + ' ' : ''}${item.name}`;
+    });
+    const text = `Belanjaan untuk: ${recipe.title}\n\n${lines.join('\n')}`;
+    navigator.clipboard.writeText(text).catch(() => {});
+  };
+
+  const startTimer = (minutes) => {
+    const totalSec = minutes * 60;
+    setTimerSeconds(totalSec);
+    setTimerTarget(Date.now() + totalSec * 1000);
+    setTimerRunning(true);
+  };
+
+  const toggleTimer = () => {
+    if (timerRunning) {
+      setTimerRunning(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    } else {
+      setTimerTarget(Date.now() + timerSeconds * 1000);
+      setTimerRunning(true);
+    }
+  };
+
+  const resetTimer = () => {
+    setTimerRunning(false);
+    setTimerSeconds(0);
+    setTimerTarget(null);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  useEffect(() => {
+    if (timerRunning && timerTarget) {
+      timerRef.current = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((timerTarget - Date.now()) / 1000));
+        setTimerSeconds(remaining);
+        if (remaining <= 0) {
+          clearInterval(timerRef.current);
+          setTimerRunning(false);
+          try { new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==').play(); } catch {}
+          alert('Timer selesai!');
+        }
+      }, 200);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerRunning, timerTarget]);
+
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const totalTime = (recipe?.prepTime || 0) + (recipe?.cookTime || 0);
+
+  const openShareModal = async () => {
+    if (!requireAuth()) return;
+    setShowShareModal(true);
+    try {
+      const data = await conversationApi.list();
+      setConversations(data.conversations);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const shareToChat = async (convId) => {
+    if (!recipe) return;
+    setShareLoading(true);
+    try {
+      await conversationApi.send(convId, `[recipe]${recipe.id}[/recipe]`);
+      setShowShareModal(false);
+      navigate(`/messages`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setShareLoading(false);
+    }
   };
 
   const confirmDeleteComment = async () => {
@@ -256,13 +374,13 @@ export default function RecipeDetail() {
               {recipe.coverUrl ? (
                 <img src={recipe.coverUrl} alt={recipe.title} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-spice-300 to-ember-600 text-8xl">
-                  🍽️
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-spice-300 to-ember-600">
+                  <Icon name="food" className="h-16 w-16 text-white/80" />
                 </div>
               )}
               {recipe.visibility === 'PRIVATE' && (
-                <span className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                  🔒 Privat
+                <span className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                  <Icon name="lock" className="h-3.5 w-3.5" /> Privat
                 </span>
               )}
             </div>
@@ -277,8 +395,8 @@ export default function RecipeDetail() {
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
-                <span className="rounded-full bg-spice-100 px-3 py-1.5 text-spice-700">
-                  {recipe.category === 'DRINK' ? '🥤 Minuman' : '🍚 Makanan'}
+                <span className="flex items-center gap-1 rounded-full bg-spice-100 px-3 py-1.5 text-spice-700">
+                  {recipe.category === 'DRINK' ? <><Icon name="drink" className="h-3.5 w-3.5 inline" /> Minuman</> : <><Icon name="food" className="h-3.5 w-3.5 inline" /> Makanan</>}
                 </span>
                 {recipe.difficulty && (
                   <span className={`rounded-full px-3 py-1.5 ${difficultyColor[recipe.difficulty]}`}>
@@ -292,7 +410,7 @@ export default function RecipeDetail() {
                   <span className="rounded-full bg-cream-200 px-3 py-1.5 text-stone-700">Memasak {recipe.cookTime} mnt</span>
                 )}
                 {recipe.servings && (
-                  <span className="rounded-full bg-cream-200 px-3 py-1.5 text-stone-700">🍽 {recipe.servings} porsi</span>
+                  <span className="flex items-center gap-1 rounded-full bg-cream-200 px-3 py-1.5 text-stone-700"><Icon name="food" className="h-3.5 w-3.5" /> {recipe.servings} porsi</span>
                 )}
               </div>
 
@@ -300,12 +418,94 @@ export default function RecipeDetail() {
                 <p className="mt-6 whitespace-pre-line leading-relaxed text-stone-700">{recipe.description}</p>
               )}
 
+              {/* Timer */}
+              {(recipe.cookTime || recipe.prepTime) && (
+                <div className="mt-6 rounded-2xl border border-cream-200 bg-cream-50 p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="flex items-center gap-1.5 text-sm font-bold text-stone-900"><Icon name="timer" className="h-4 w-4" /> Timer Memasak</h3>
+                      <p className="mt-0.5 text-xs text-stone-500">
+                        {timerRunning ? (
+                          <span className="font-mono text-lg font-extrabold text-ember-600">{formatTime(timerSeconds)}</span>
+                        ) : timerSeconds > 0 ? (
+                          <span className="font-mono text-lg font-extrabold text-stone-400">{formatTime(timerSeconds)}</span>
+                        ) : (
+                          `Total ${totalTime} menit`
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {timerSeconds > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={toggleTimer}
+                            className={`rounded-full px-4 py-2 text-xs font-bold text-white transition ${
+                              timerRunning ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                          >
+                            {timerRunning ? <><Icon name="pause" className="h-4 w-4 inline" /> Jeda</> : <><Icon name="play" className="h-4 w-4 inline" /> Lanjut</>}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={resetTimer}
+                            className="rounded-full border border-cream-300 bg-white px-3 py-2 text-xs font-bold text-stone-600 transition hover:bg-cream-50"
+                          >
+                            <Icon name="reset" className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {!timerRunning && timerSeconds === 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {recipe.prepTime && (
+                        <button
+                          type="button"
+                          onClick={() => startTimer(recipe.prepTime)}
+                          className="rounded-full border border-spice-200 bg-white px-3 py-1.5 text-xs font-bold text-spice-700 transition hover:bg-spice-50"
+                        >
+                          Persiapan {recipe.prepTime} mnt
+                        </button>
+                      )}
+                      {recipe.cookTime && (
+                        <button
+                          type="button"
+                          onClick={() => startTimer(recipe.cookTime)}
+                          className="rounded-full border border-ember-200 bg-white px-3 py-1.5 text-xs font-bold text-ember-700 transition hover:bg-ember-50"
+                        >
+                          Memasak {recipe.cookTime} mnt
+                        </button>
+                      )}
+                      {totalTime > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => startTimer(totalTime)}
+                          className="rounded-full border border-green-200 bg-white px-3 py-1.5 text-xs font-bold text-green-700 transition hover:bg-green-50"
+                        >
+                          Total {totalTime} mnt
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-8 grid gap-8 md:grid-cols-2">
                 <section>
-                  <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-spice-100 text-base">🥕</span>
-                    Bahan-bahan
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-spice-100"><Icon name="ingredients" className="h-5 w-5 text-spice-600" /></span>
+                      Bahan-bahan
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => { setShowShoppingList(true); setCheckedItems({}); }}
+                      className="rounded-full bg-spice-100 px-3 py-1.5 text-xs font-bold text-spice-700 transition hover:bg-spice-200"
+                    >
+                      <><Icon name="cart" className="h-5 w-5 inline" /> Daftar Belanja</>
+                    </button>
+                  </div>
                   <ul className="mt-4 space-y-2.5">
                     {(recipe.ingredients || []).map((ing, i) => {
                       const item = typeof ing === 'string' ? { name: ing } : ing;
@@ -324,7 +524,7 @@ export default function RecipeDetail() {
 
                 <section>
                   <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ember-100 text-base">👨‍🍳</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ember-100"><Icon name="steps" className="h-5 w-5 text-ember-600" /></span>
                     Langkah memasak
                   </h2>
                   <ol className="mt-4 space-y-4">
@@ -377,6 +577,46 @@ export default function RecipeDetail() {
                   </svg>
                   {recipe._count?.comments ?? 0} Komentar
                 </span>
+                {user && (
+                  <button
+                    type="button"
+                    onClick={openShareModal}
+                    className="flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-4 py-2 text-stone-600 transition hover:border-spice-300 hover:bg-spice-50 hover:text-spice-700"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+                    </svg>
+                    Bagikan
+                  </button>
+                )}
+              </div>
+
+              {/* Rating */}
+              <div className="mt-5 flex items-center gap-3 border-t border-cream-200 pt-5">
+                <span className="text-sm font-semibold text-stone-600">Rating:</span>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      disabled={ratingBusy}
+                      onClick={() => handleRate(v)}
+                      className="text-2xl transition hover:scale-125"
+                      title={`${v} bintang`}
+                    >
+                      {recipe.myRating && v <= recipe.myRating ? (
+                        <Icon name="star-filled" className="h-6 w-6 text-amber-400" />
+                      ) : (
+                        <Icon name="star" className="h-6 w-6 text-stone-300" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {recipe.avgRating && (
+                  <span className="text-sm font-bold text-amber-600">
+                    {recipe.avgRating} <span className="font-normal text-stone-400">({recipe.ratingCount} rating)</span>
+                  </span>
+                )}
               </div>
 
               {/* Komentar */}
@@ -420,12 +660,110 @@ export default function RecipeDetail() {
         )}
       </main>
 
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowShareModal(false)} />
+          <div className="relative w-full max-w-md max-h-[80vh] overflow-hidden rounded-3xl border border-cream-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-cream-200 px-6 py-4">
+              <h3 className="flex items-center gap-2 text-lg font-extrabold text-stone-900"><Icon name="share" className="h-5 w-5" /> Bagikan ke Chat</h3>
+              <button onClick={() => setShowShareModal(false)} className="rounded-full p-1 text-stone-400 transition hover:bg-cream-100 hover:text-stone-600">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4" style={{ maxHeight: 'calc(80vh - 8rem)' }}>
+              {conversations.length === 0 ? (
+                <p className="py-6 text-center text-sm text-stone-500">Belum ada percakapan.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {conversations.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => shareToChat(c.id)}
+                        disabled={shareLoading}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-cream-50 disabled:opacity-50"
+                      >
+                        {c.otherUser?.avatarUrl ? (
+                          <img src={c.otherUser.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-spice-600 text-sm font-bold text-white">
+                            {c.otherUser?.name?.charAt(0)?.toUpperCase()}
+                          </span>
+                        )}
+                        <span className="truncate text-sm font-bold text-stone-900">{c.otherUser?.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showShoppingList && recipe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowShoppingList(false)} />
+          <div className="relative w-full max-w-md max-h-[80vh] overflow-hidden rounded-3xl border border-cream-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-cream-200 px-6 py-4">
+              <h3 className="flex items-center gap-2 text-lg font-extrabold text-stone-900"><Icon name="cart" className="h-5 w-5" /> Daftar Belanja</h3>
+              <button onClick={() => setShowShoppingList(false)} className="rounded-full p-1 text-stone-400 transition hover:bg-cream-100 hover:text-stone-600">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4" style={{ maxHeight: 'calc(80vh - 8rem)' }}>
+              <p className="mb-3 text-xs font-semibold text-stone-400">{recipe.title}</p>
+              <ul className="space-y-2">
+                {recipe.ingredients.map((ing, idx) => {
+                  const item = typeof ing === 'string' ? { name: ing } : ing;
+                  const checked = !!checkedItems[idx];
+                  return (
+                    <li key={idx}>
+                      <button
+                        type="button"
+                        onClick={() => toggleShoppingItem(idx)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                          checked ? 'bg-green-50 text-green-700 line-through' : 'bg-cream-50 text-stone-700 hover:bg-cream-100'
+                        }`}
+                      >
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
+                          checked ? 'border-green-500 bg-green-500 text-white' : 'border-stone-300'
+                        }`}>
+                          {checked && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        </span>
+                        <span>
+                          {item.amount && <strong className="mr-1">{item.amount}</strong>}
+                          {item.name}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className="border-t border-cream-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={copyShoppingList}
+                className="w-full rounded-full bg-spice-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-spice-700"
+              >
+                <><Icon name="copy" className="h-5 w-5 inline" /> Salin ke Clipboard</>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {commentToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setCommentToDelete(null)} />
           <div className="relative w-full max-w-sm rounded-3xl border border-cream-200 bg-white p-6 shadow-2xl">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100 text-xl">🗑️</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100"><Icon name="trash" className="h-5 w-5 text-red-500" /></span>
               <h3 className="text-lg font-extrabold text-stone-900">Hapus komentar?</h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-stone-500">

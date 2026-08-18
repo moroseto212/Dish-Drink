@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { conversationApi, userApi } from '../api.js';
+import { conversationApi, userApi, recipeApi } from '../api.js';
+import Icon from '../components/Icon.jsx';
 
 function timeAgo(dateStr) {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -31,6 +32,67 @@ function Avatar({ user, size = 'h-11 w-11' }) {
   );
 }
 
+function RecipeCardChat({ recipeId }) {
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    recipeApi
+      .get(recipeId)
+      .then((data) => setRecipe(data.recipe))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [recipeId]);
+
+  if (loading) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-cream-200 bg-white">
+        <div className="animate-pulse">
+          <div className="h-24 bg-cream-200" />
+          <div className="p-3 space-y-2">
+            <div className="h-3 w-3/4 rounded bg-cream-200" />
+            <div className="h-3 w-1/2 rounded bg-cream-200" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!recipe) {
+    return (
+      <div className="rounded-xl border border-cream-200 bg-white px-3 py-2 text-xs text-stone-400">
+        Resep tidak ditemukan
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/recipes/${recipe.id}`}
+      className="block overflow-hidden rounded-xl border border-cream-200 bg-white transition hover:shadow-md"
+    >
+      {recipe.coverUrl && (
+        <div className="h-24 w-full overflow-hidden bg-cream-200">
+          <img src={recipe.coverUrl} alt={recipe.title} className="h-full w-full object-cover" />
+        </div>
+      )}
+      <div className="p-3">
+        <p className="text-xs font-bold text-stone-900 line-clamp-2">{recipe.title}</p>
+        <div className="mt-1 flex items-center gap-2 text-[10px] text-stone-400">
+          <span>{recipe.category === 'DRINK' ? <Icon name="drink" className="h-3 w-3" /> : <Icon name="food" className="h-3 w-3" />}</span>
+          {recipe.cookTime && <span>{recipe.cookTime} mnt</span>}
+          {recipe._count?.likes > 0 && <span className="flex items-center gap-1"><Icon name="heart-filled" className="h-3 w-3 text-red-400" /> {recipe._count.likes}</span>}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function parseRecipeId(content) {
+  const match = content?.match(/\[recipe\](.+?)\[\/recipe\]/);
+  return match ? match[1] : null;
+}
+
 export default function Messages() {
   const { user: me } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,6 +102,7 @@ export default function Messages() {
   const [activeId, setActiveId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [mutualUsers, setMutualUsers] = useState([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
@@ -116,14 +179,17 @@ export default function Messages() {
     e.preventDefault();
     const content = draft.trim();
     if (!content || !activeId) return;
+    const currentReplyTo = replyTo;
     setDraft('');
+    setReplyTo(null);
     try {
-      const { message } = await conversationApi.send(activeId, content);
+      const { message } = await conversationApi.send(activeId, content, currentReplyTo?.id);
       setMessages((prev) => [...prev, message]);
       loadConversations();
     } catch (err) {
       setError(err.message);
       setDraft(content);
+      setReplyTo(currentReplyTo);
     }
   };
 
@@ -221,7 +287,7 @@ export default function Messages() {
               </div>
             ) : conversations.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-cream-300 bg-white px-5 py-10 text-center">
-                <span className="text-4xl">💬</span>
+                <span className="text-4xl"><Icon name="chat" className="h-10 w-10 text-stone-300" /></span>
                 <p className="mt-3 text-sm font-bold text-stone-900">Belum ada percakapan</p>
                 <p className="mt-1 text-xs text-stone-500">
                   Klik "+ Chat Baru" untuk memulai dengan teman yang saling mengikuti.
@@ -291,26 +357,53 @@ export default function Messages() {
                   <p className="text-center text-sm text-stone-500">Memuat pesan…</p>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center py-10 text-center">
-                    <span className="text-4xl">👋</span>
+                    <span className="text-4xl"><Icon name="chat" className="h-10 w-10 text-stone-300" /></span>
                     <p className="mt-3 text-sm font-bold text-stone-900">Belum ada pesan</p>
                     <p className="mt-1 text-xs text-stone-500">Mulai sapaan pertamamu untuk {otherUser.name}!</p>
                   </div>
                 ) : (
                   messages.map((m) => {
                     const mine = m.senderId === me.id;
+                    const recipeId = parseRecipeId(m.content);
                     return (
-                      <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
-                            mine
+                      <div key={m.id} className={`group flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                        <div className="relative max-w-[75%]">
+                          {m.replyTo && (
+                            <div className="mb-1 rounded-t-2xl border-l-4 border-spice-400 bg-stone-200/70 px-3 py-2 text-xs">
+                              <span className="font-bold text-stone-700">{m.replyTo.senderName}</span>
+                              <p className="mt-0.5 truncate text-stone-500">{m.replyTo.content}</p>
+                            </div>
+                          )}
+                          <div
+                            className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
+                              m.replyTo ? 'rounded-t-none ' : ''
+                            }${mine
                               ? 'rounded-br-md bg-ember-600 text-white'
                               : 'rounded-bl-md border border-cream-200 bg-white text-stone-800'
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                          <p className={`mt-1 text-right text-[10px] ${mine ? 'text-white/70' : 'text-stone-400'}`}>
-                            {clock(m.createdAt)}
-                          </p>
+                            }`}
+                          >
+                            {recipeId ? (
+                              <RecipeCardChat recipeId={recipeId} />
+                            ) : (
+                              <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                            )}
+                            <div className={`mt-1 flex items-center justify-end gap-2 text-[10px] ${mine ? 'text-white/70' : 'text-stone-400'}`}>
+                              <span>{clock(m.createdAt)}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setReplyTo(m)}
+                            className={`absolute top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full opacity-0 shadow-sm transition group-hover:opacity-100 ${
+                              mine
+                                ? '-left-9 bg-white text-stone-500 hover:bg-cream-100'
+                                : '-right-9 bg-white text-stone-500 hover:bg-cream-100'
+                            }`}
+                            title="Balas"
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     );
@@ -319,25 +412,44 @@ export default function Messages() {
                 <div ref={bottomRef} />
               </div>
 
-              <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-cream-200 p-3">
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Tulis pesan…"
-                  className="flex-1 rounded-full border border-cream-300 bg-cream-50 px-4 py-2.5 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200"
-                />
-                <button
-                  type="submit"
-                  disabled={!draft.trim()}
-                  className="rounded-full bg-ember-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-ember-700 disabled:opacity-50"
-                >
-                  Kirim
-                </button>
+              <form onSubmit={handleSend} className="border-t border-cream-200">
+                {replyTo && (
+                  <div className="flex items-center gap-2 border-b border-cream-100 bg-cream-50 px-4 py-2">
+                    <div className="min-w-0 flex-1 border-l-2 border-spice-400 pl-3">
+                      <p className="text-xs font-semibold text-stone-500">Membalas {replyTo.senderId === me.id ? 'diri sendiri' : otherUser?.name}</p>
+                      <p className="truncate text-xs text-stone-400">{replyTo.content}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReplyTo(null)}
+                      className="shrink-0 rounded-full p-1 text-stone-400 transition hover:bg-cream-200 hover:text-stone-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 p-3">
+                  <input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder="Tulis pesan…"
+                    className="flex-1 rounded-full border border-cream-300 bg-cream-50 px-4 py-2.5 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!draft.trim()}
+                    className="rounded-full bg-ember-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-ember-700 disabled:opacity-50"
+                  >
+                    Kirim
+                  </button>
+                </div>
               </form>
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <span className="text-5xl">💬</span>
+              <span className="text-5xl"><Icon name="chat" className="h-10 w-10 text-stone-300" /></span>
               <h2 className="mt-4 text-lg font-bold text-stone-900">Pilih percakapan</h2>
               <p className="mt-2 max-w-sm text-sm text-stone-500">
                 Pilih percakapan di kiri, atau mulai chat baru dengan teman yang saling mengikuti.

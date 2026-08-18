@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { userApi, uploadApi } from '../api.js';
+import { userApi, uploadApi, authApi } from '../api.js';
+import Icon from '../components/Icon.jsx';
 
 const inputClass =
   'w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-2.5 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200';
@@ -17,6 +18,15 @@ export default function Settings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState('');
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handlePickAvatar = (e) => {
     const file = e.target.files?.[0];
@@ -60,7 +70,43 @@ export default function Settings() {
     }
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setPwSuccess('');
+    if (newPassword !== confirmPassword) {
+      setError('Konfirmasi password tidak cocok');
+      return;
+    }
+    setPwLoading(true);
+    try {
+      await authApi.changePassword({ currentPassword, newPassword });
+      setPwSuccess('Password berhasil diubah.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      await authApi.deleteAccount();
+      setUser(null);
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   return (
+    <>
     <main className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">Pengaturan Akun</h1>
         <p className="mt-1 text-sm text-stone-500">Kelola profilmu.</p>
@@ -80,7 +126,7 @@ export default function Settings() {
           {/* Profil */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-spice-100 text-lg">👤</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-spice-100 text-lg"><Icon name="user" className="h-5 w-5 text-spice-600" /></span>
               Informasi Profil
             </h2>
 
@@ -153,6 +199,86 @@ export default function Settings() {
             </div>
           </section>
 
+          {/* Ubah Password */}
+          {user?.hasPassword && (
+            <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-lg"><Icon name="lock" className="h-5 w-5 text-amber-600" /></span>
+                Ubah Password
+              </h2>
+
+              {pwSuccess && (
+                <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                  {pwSuccess}
+                </div>
+              )}
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label htmlFor="current-pw" className="mb-1.5 block text-sm font-semibold text-stone-700">Password lama</label>
+                  <input
+                    id="current-pw"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="new-pw" className="mb-1.5 block text-sm font-semibold text-stone-700">Password baru</label>
+                  <input
+                    id="new-pw"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={6}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirm-pw" className="mb-1.5 block text-sm font-semibold text-stone-700">Konfirmasi password baru</label>
+                  <input
+                    id="confirm-pw"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={6}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleChangePassword}
+                  disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
+                  className="rounded-full bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {pwLoading ? 'Mengubah…' : 'Ubah Password'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Hapus Akun */}
+          <section className="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-red-900">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-lg"><Icon name="warning" className="h-5 w-5 text-red-600" /></span>
+              Zona Berbahaya
+            </h2>
+            <p className="mt-2 text-sm text-red-700">
+              Menghapus akun akan menghapus semua data kamu secara permanen. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="mt-4 rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-red-600/25 transition hover:bg-red-700"
+            >
+              Hapus Akun Saya
+            </button>
+          </section>
+
           <div className="flex items-center justify-end gap-3 pb-8">
             <button
               type="button"
@@ -171,5 +297,38 @@ export default function Settings() {
           </div>
         </form>
       </main>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative w-full max-w-sm rounded-3xl border border-cream-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100 text-xl"><Icon name="trash" className="h-5 w-5 text-red-600" /></span>
+              <h3 className="text-lg font-extrabold text-stone-900">Hapus Akun?</h3>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-stone-500">
+              Semua data, resep, komentar, dan percakapan kamu akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="rounded-full border border-cream-300 bg-white px-5 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-cream-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-red-600/25 transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteLoading ? 'Menghapus…' : 'Ya, Hapus Akun'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

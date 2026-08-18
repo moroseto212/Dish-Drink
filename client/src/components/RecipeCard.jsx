@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { recipeApi } from '../api.js';
+import Icon from './Icon.jsx';
 
 export default function RecipeCard({ recipe }) {
   const { user } = useAuth();
@@ -82,16 +83,17 @@ export default function RecipeCard({ recipe }) {
           className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-spice-300 to-ember-600 text-6xl">
-          {recipe.category === 'DRINK' ? '🥤' : '🍽️'}
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-spice-300 to-ember-600">
+          <Icon name={recipe.category === 'DRINK' ? 'drink' : 'food'} className="h-16 w-16 text-white/80" />
         </div>
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10 transition group-hover:from-black/85" />
 
       {recipe.category && (
-        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-stone-800 shadow backdrop-blur">
-          {recipe.category === 'DRINK' ? '🥤 Minuman' : '🍽️ Makanan'}
+        <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-stone-800 shadow backdrop-blur">
+          <Icon name={recipe.category === 'DRINK' ? 'drink' : 'food'} className="h-3.5 w-3.5" />
+          {recipe.category === 'DRINK' ? 'Minuman' : 'Makanan'}
         </span>
       )}
 
@@ -101,7 +103,11 @@ export default function RecipeCard({ recipe }) {
         </h3>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-white/85">
-          {totalTime && <span>⏱ {totalTime} mnt</span>}
+          {totalTime && (
+            <span className="flex items-center gap-1">
+              <Icon name="clock" className="h-3.5 w-3.5" /> {totalTime} mnt
+            </span>
+          )}
           <button
             type="button"
             onClick={toggleLike}
@@ -109,7 +115,11 @@ export default function RecipeCard({ recipe }) {
             className="flex items-center gap-1 transition hover:scale-110"
             title={liked ? 'Batalkan suka' : 'Suka'}
           >
-            <span className={liked ? 'text-red-500' : ''}>{liked ? '❤' : '🤍'}</span>
+            {liked ? (
+              <Icon name="heart-filled" className={`h-3.5 w-3.5 ${liked ? 'text-red-500' : ''}`} />
+            ) : (
+              <Icon name="heart" className="h-3.5 w-3.5" />
+            )}
             {likesCount}
           </button>
           <button
@@ -119,11 +129,11 @@ export default function RecipeCard({ recipe }) {
             className={`flex items-center gap-1 transition hover:scale-110 ${saved ? 'text-amber-300' : 'opacity-80'}`}
             title={saved ? 'Batalkan simpan' : 'Simpan'}
           >
-            <span>🔖</span>
+            <Icon name={saved ? 'bookmark-filled' : 'bookmark'} className="h-3.5 w-3.5" />
             {savesCount}
           </button>
           <span className="flex items-center gap-1">
-            <span className="text-sky-300">💬</span> {recipe._count?.comments ?? 0}
+            <Icon name="chat" className="h-3.5 w-3.5 text-sky-300" /> {recipe._count?.comments ?? 0}
           </span>
         </div>
 

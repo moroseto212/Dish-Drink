@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import RecipeCard from '../components/RecipeCard.jsx';
 import FollowButton from '../components/FollowButton.jsx';
+import Icon from '../components/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { userApi } from '../api.js';
 
@@ -51,7 +52,7 @@ export default function Profile() {
 
         {error && (
           <div className="rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-16 text-center">
-            <span className="text-5xl">🔒</span>
+            <Icon name="lock" className="h-12 w-12 text-stone-300" />
             <h2 className="mt-4 text-lg font-bold text-stone-900">Tidak dapat menampilkan profil</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">{error}</p>
             {!id && (
@@ -92,7 +93,7 @@ export default function Profile() {
                           to={`/messages?user=${profile.id}`}
                           className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-5 py-2.5 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-cream-50"
                         >
-                          💬 Chat
+                           <Icon name="chat" className="h-4 w-4" /> Chat
                         </Link>
                       )}
                       <FollowButton
@@ -153,13 +154,13 @@ export default function Profile() {
             {/* Daftar resep */}
             <div className="mt-8">
               <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-                <span className="text-xl">📖</span>
+                <Icon name="book" className="h-5 w-5 text-stone-700" />
                 {isSelf ? 'Resep Saya' : `Resep oleh ${profile.name}`}
               </h2>
 
               {recipes.length === 0 ? (
                 <div className="mt-5 rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-14 text-center">
-                  <span className="text-5xl">🍳</span>
+                   <Icon name="food" className="h-12 w-12 text-stone-300" />
                   <h3 className="mt-3 text-lg font-bold text-stone-900">
                     {isSelf ? 'Belum ada resep' : 'Belum ada resep publik'}
                   </h3>
@@ -189,7 +190,7 @@ export default function Profile() {
                               : 'bg-amber-100 text-amber-700'
                           }`}
                         >
-                          {r.visibility === 'PUBLIC' ? '🌍 Publik' : '🔒 Privat'}
+                          {r.visibility === 'PUBLIC' ? <><Icon name="globe" className="h-3 w-3 inline" /> Publik</> : <><Icon name="lock" className="h-3 w-3 inline" /> Privat</>}
                         </span>
                       )}
                       <RecipeCard recipe={r} />

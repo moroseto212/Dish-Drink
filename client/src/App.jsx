@@ -11,6 +11,7 @@ import Profile from './pages/Profile.jsx';
 import RecipeDetail from './pages/RecipeDetail.jsx';
 import NewRecipe from './pages/NewRecipe.jsx';
 import Settings from './pages/Settings.jsx';
+import SavedRecipes from './pages/SavedRecipes.jsx';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -108,6 +109,16 @@ export default function App() {
           <Protected>
             <AppLayout>
               <Settings />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/saved"
+        element={
+          <Protected>
+            <AppLayout>
+              <SavedRecipes />
             </AppLayout>
           </Protected>
         }

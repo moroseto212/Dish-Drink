@@ -135,20 +135,42 @@ export async function getRecipe(req, res) {
 
     let liked = false;
     let saved = false;
+    let myRating = null;
     if (req.user) {
-      const [like, save] = await Promise.all([
+      const [like, save, rating] = await Promise.all([
         prisma.recipeLike.findUnique({
           where: { userId_recipeId: { userId: req.user.id, recipeId: id } },
         }),
         prisma.recipeSave.findUnique({
           where: { userId_recipeId: { userId: req.user.id, recipeId: id } },
         }),
+        prisma.recipeRating.findUnique({
+          where: { userId_recipeId: { userId: req.user.id, recipeId: id } },
+        }),
       ]);
       liked = !!like;
       saved = !!save;
+      myRating = rating ? rating.rating : null;
     }
 
-    return res.json({ recipe: { ...recipe, comments, liked, saved, author: sanitizeUser(recipe.author) } });
+    const ratingAgg = await prisma.recipeRating.aggregate({
+      where: { recipeId: id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    return res.json({
+      recipe: {
+        ...recipe,
+        comments,
+        liked,
+        saved,
+        myRating,
+        avgRating: ratingAgg._avg.rating ? Math.round(ratingAgg._avg.rating * 10) / 10 : null,
+        ratingCount: ratingAgg._count.rating,
+        author: sanitizeUser(recipe.author),
+      },
+    });
   } catch (err) {
     console.error('Get recipe error:', err);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
@@ -421,6 +443,58 @@ export async function deleteComment(req, res) {
     return res.json({ message: 'Komentar berhasil dihapus', commentsCount });
   } catch (err) {
     console.error('Delete comment error:', err);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+  }
+}
+
+export async function rateRecipe(req, res) {
+  try {
+    const { id } = req.params;
+    const rating = parseInt(req.body?.rating, 10);
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating harus antara 1-5' });
+    }
+
+    const recipe = await getViewableRecipe(id, req.user.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Resep tidak ditemukan' });
+    }
+
+    await prisma.recipeRating.upsert({
+      where: { userId_recipeId: { userId: req.user.id, recipeId: id } },
+      update: { rating },
+      create: { userId: req.user.id, recipeId: id, rating },
+    });
+
+    const [agg, myRating] = await Promise.all([
+      prisma.recipeRating.aggregate({ where: { recipeId: id }, _avg: { rating: true }, _count: { rating: true } }),
+      prisma.recipeRating.findUnique({ where: { userId_recipeId: { userId: req.user.id, recipeId: id } } }),
+    ]);
+
+    return res.json({
+      myRating: myRating.rating,
+      avgRating: agg._avg.rating ? Math.round(agg._avg.rating * 10) / 10 : null,
+      ratingCount: agg._count.rating,
+    });
+  } catch (err) {
+    console.error('Rate recipe error:', err);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+  }
+}
+
+export async function unrateRecipe(req, res) {
+  try {
+    const { id } = req.params;
+    await prisma.recipeRating.deleteMany({ where: { userId: req.user.id, recipeId: id } });
+
+    const agg = await prisma.recipeRating.aggregate({ where: { recipeId: id }, _avg: { rating: true }, _count: { rating: true } });
+    return res.json({
+      myRating: null,
+      avgRating: agg._avg.rating ? Math.round(agg._avg.rating * 10) / 10 : null,
+      ratingCount: agg._count.rating,
+    });
+  } catch (err) {
+    console.error('Unrate recipe error:', err);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
   }
 }

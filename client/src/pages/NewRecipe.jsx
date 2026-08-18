@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recipeApi, uploadApi } from '../api.js';
+import Icon from '../components/Icon.jsx';
 
 const difficultyOptions = [
-  { value: 'EASY', label: 'Mudah', emoji: '🌱' },
-  { value: 'MEDIUM', label: 'Sedang', emoji: '🍳' },
-  { value: 'HARD', label: 'Sulit', emoji: '🔥' },
+  { value: 'EASY', label: 'Mudah', icon: 'seedling' },
+  { value: 'MEDIUM', label: 'Sedang', icon: 'food' },
+  { value: 'HARD', label: 'Sulit', icon: 'flame' },
 ];
 
-function SectionTitle({ emoji, title }) {
+function SectionTitle({ iconName, title }) {
   return (
     <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-spice-100 text-lg">{emoji}</span>
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-spice-100 text-lg"><Icon name={iconName} className="h-5 w-5 text-spice-600" /></span>
       {title}
     </h2>
   );
@@ -131,7 +132,7 @@ export default function NewRecipe() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-8">
           {/* Kategori */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
-            <SectionTitle emoji="🍱" title="Jenis resep" />
+            <SectionTitle iconName="food" title="Jenis resep" />
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -142,7 +143,7 @@ export default function NewRecipe() {
                     : 'border-cream-200 bg-cream-50 text-stone-500 hover:border-cream-300'
                 }`}
               >
-                🍚 Makanan
+                <Icon name="food" className="h-5 w-5 inline" /> Makanan
               </button>
               <button
                 type="button"
@@ -153,14 +154,14 @@ export default function NewRecipe() {
                     : 'border-cream-200 bg-cream-50 text-stone-500 hover:border-cream-300'
                 }`}
               >
-                🥤 Minuman
+                <Icon name="drink" className="h-5 w-5 inline" /> Minuman
               </button>
             </div>
           </section>
 
           {/* Info dasar */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
-            <SectionTitle emoji="📝" title="Informasi dasar" />
+            <SectionTitle iconName="write" title="Informasi dasar" />
             <div className="mt-4 space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-stone-700">Judul resep *</label>
@@ -184,7 +185,7 @@ export default function NewRecipe() {
                       <img src={coverPreview} alt="Pratinjau foto resep" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-5xl">
-                        {category === 'DRINK' ? '🥤' : '🍽️'}
+                        {category === 'DRINK' ? <Icon name="drink" className="h-12 w-12" /> : <Icon name="food" className="h-12 w-12" />}
                       </div>
                     )}
                   </div>
@@ -224,7 +225,7 @@ export default function NewRecipe() {
 
           {/* Detail waktu & porsi */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
-            <SectionTitle emoji="⏱️" title="Waktu & porsi" />
+            <SectionTitle iconName="timer" title="Waktu & porsi" />
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-stone-700">Persiapan (mnt)</label>
@@ -253,7 +254,7 @@ export default function NewRecipe() {
                       : 'border-cream-200 bg-cream-50 text-stone-500 hover:border-cream-300'
                   }`}
                 >
-                  {d.emoji} {d.label}
+                  <Icon name={d.icon} className="h-4 w-4 inline" /> {d.label}
                 </button>
               ))}
             </div>
@@ -262,7 +263,7 @@ export default function NewRecipe() {
           {/* Bahan */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
-              <SectionTitle emoji="🥕" title="Bahan-bahan" />
+              <SectionTitle iconName="ingredients" title="Bahan-bahan" />
               <button
                 type="button"
                 onClick={addIngredient}
@@ -305,7 +306,7 @@ export default function NewRecipe() {
           {/* Langkah */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
-              <SectionTitle emoji="👨‍🍳" title="Langkah memasak" />
+              <SectionTitle iconName="steps" title="Langkah memasak" />
               <button
                 type="button"
                 onClick={addStep}
@@ -344,7 +345,7 @@ export default function NewRecipe() {
 
           {/* Privasi */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
-            <SectionTitle emoji="🔒" title="Privasi resep" />
+            <SectionTitle iconName="lock" title="Privasi resep" />
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -353,7 +354,7 @@ export default function NewRecipe() {
                   visibility === 'PRIVATE' ? 'border-spice-500 bg-spice-50' : 'border-cream-200 bg-cream-50 hover:border-cream-300'
                 }`}
               >
-                <p className="text-sm font-bold text-stone-900">🔒 Privat</p>
+                <p className="text-sm font-bold text-stone-900"><Icon name="lock" className="h-4 w-4 inline" /> Privat</p>
                 <p className="mt-1 text-xs text-stone-500">Hanya kamu yang bisa melihat (buku catatan pribadi).</p>
               </button>
               <button
@@ -363,7 +364,7 @@ export default function NewRecipe() {
                   visibility === 'PUBLIC' ? 'border-spice-500 bg-spice-50' : 'border-cream-200 bg-cream-50 hover:border-cream-300'
                 }`}
               >
-                <p className="text-sm font-bold text-stone-900">🌍 Publik</p>
+                <p className="text-sm font-bold text-stone-900"><Icon name="globe" className="h-4 w-4 inline" /> Publik</p>
                 <p className="mt-1 text-xs text-stone-500">Muncul di feed komunitas & bisa dilihat semua orang.</p>
               </button>
             </div>

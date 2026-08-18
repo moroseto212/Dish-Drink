@@ -11,6 +11,8 @@ import {
   unsaveRecipe,
   addComment,
   deleteComment,
+  rateRecipe,
+  unrateRecipe,
 } from '../controllers/recipeController.js';
 import { isAuthenticated } from '../middleware/auth.js';
 
@@ -27,5 +29,7 @@ router.post('/:id/save', isAuthenticated, saveRecipe);
 router.delete('/:id/save', isAuthenticated, unsaveRecipe);
 router.post('/:id/comments', isAuthenticated, addComment);
 router.delete('/:id/comments/:commentId', isAuthenticated, deleteComment);
+router.post('/:id/rate', isAuthenticated, rateRecipe);
+router.delete('/:id/rate', isAuthenticated, unrateRecipe);
 
 export default router;

@@ -23,6 +23,8 @@ export const authApi = {
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
+  changePassword: (body) => request('/auth/change-password', { method: 'POST', body: JSON.stringify(body) }),
+  deleteAccount: () => request('/auth/account', { method: 'DELETE' }),
 };
 
 export const recipeApi = {
@@ -45,6 +47,8 @@ export const recipeApi = {
   addComment: (id, content, parentId) =>
     request(`/recipes/${id}/comments`, { method: 'POST', body: JSON.stringify({ content, parentId: parentId || null }) }),
   deleteComment: (recipeId, commentId) => request(`/recipes/${recipeId}/comments/${commentId}`, { method: 'DELETE' }),
+  rate: (id, rating) => request(`/recipes/${id}/rate`, { method: 'POST', body: JSON.stringify({ rating }) }),
+  unrate: (id) => request(`/recipes/${id}/rate`, { method: 'DELETE' }),
 };
 
 export const userApi = {
@@ -52,6 +56,7 @@ export const userApi = {
   getProfile: (id) => request(`/users/${id}`),
   getUserRecipes: (id) => request(`/users/${id}/recipes`),
   searchUsers: (q = '') => request(`/users/search${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  savedRecipes: () => request('/users/saved'),
   follow: (id) => request(`/users/${id}/follow`, { method: 'POST' }),
   unfollow: (id) => request(`/users/${id}/follow`, { method: 'DELETE' }),
   mutual: () => request('/users/mutual'),
@@ -62,7 +67,7 @@ export const conversationApi = {
   unreadCount: () => request('/conversations/unread-count'),
   open: (userId) => request('/conversations', { method: 'POST', body: JSON.stringify({ userId }) }),
   messages: (id) => request(`/conversations/${id}/messages`),
-  send: (id, content) => request(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
+  send: (id, content, replyToId) => request(`/conversations/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, replyToId: replyToId || null }) }),
   markRead: (id) => request(`/conversations/${id}/read`, { method: 'POST' }),
 };
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import RecipeCard from '../components/RecipeCard.jsx';
+import Icon from '../components/Icon.jsx';
 import { recipeApi } from '../api.js';
 
 export default function Feed() {
@@ -121,7 +122,7 @@ export default function Feed() {
           </div>
         ) : recipes.length === 0 ? (
           <div className="mt-16 rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-16 text-center">
-            <span className="text-5xl">🍳</span>
+            <Icon name="food" className="h-12 w-12 text-stone-300" />
             <h2 className="mt-4 text-lg font-bold text-stone-900">Belum ada resep ditemukan</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
               Coba ubah kata kunci pencarian atau masak resep pertamamu dan bagikan ke komunitas!

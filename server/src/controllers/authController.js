@@ -80,3 +80,55 @@ export function logout(req, res) {
     });
   });
 }
+
+export async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Password lama dan baru wajib diisi' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password baru minimal 6 karakter' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user || !user.passwordHash) {
+      return res.status(400).json({ message: 'Akun ini menggunakan Google OAuth' });
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: 'Password lama salah' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: req.user.id }, data: { passwordHash } });
+
+    return res.json({ message: 'Password berhasil diubah' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+  }
+}
+
+export async function deleteAccount(req, res) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) {
+      return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
+    }
+
+    await prisma.user.delete({ where: { id: req.user.id } });
+
+    req.logout((err) => {
+      if (err) return res.status(500).json({ message: 'Gagal menghapus akun' });
+      req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        return res.json({ message: 'Akun berhasil dihapus' });
+      });
+    });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+  }
+}

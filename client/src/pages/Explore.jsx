@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import FollowButton from '../components/FollowButton.jsx';
+import Icon from '../components/Icon.jsx';
 import { userApi } from '../api.js';
 
 export default function Explore() {
@@ -86,7 +87,7 @@ export default function Explore() {
         </div>
       ) : users.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-14 text-center">
-          <span className="text-5xl">🔍</span>
+           <Icon name="search" className="h-12 w-12 text-stone-300" />
           <h2 className="mt-4 text-lg font-bold text-stone-900">Tidak ada pengguna ditemukan</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
             Coba kata kunci lain, atau undang temanmu untuk bergabung di Dish &amp; Drink.

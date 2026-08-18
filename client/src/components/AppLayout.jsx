@@ -6,6 +6,7 @@ import Logo from './Logo.jsx';
 
 const navItems = [
   { to: '/feed', label: 'Beranda', icon: 'home' },
+  { to: '/saved', label: 'Tersimpan', icon: 'bookmark' },
   { to: '/explore', label: 'Cari Teman', icon: 'search' },
   { to: '/messages', label: 'Pesan', icon: 'chat' },
   { to: '/profile', label: 'Profil Saya', icon: 'user' },
@@ -79,6 +80,12 @@ function Icon({ name, className = 'h-5 w-5' }) {
       return (
         <svg {...props}>
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      );
+    case 'bookmark':
+      return (
+        <svg {...props}>
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
         </svg>
       );
     case 'menu':
@@ -207,7 +214,7 @@ function SidebarBody({ onNavigate, notifications, unreadCount, msgUnread, bellOp
                             n.isRead ? '' : 'bg-spice-50'
                           }`}
                         >
-                          <span className="mt-0.5 text-base">👤</span>
+                           <Icon name="user" className="h-4 w-4 text-stone-400" />
                           <span className="min-w-0 flex-1">
                             <span className={`block ${n.isRead ? 'text-stone-600' : 'font-bold text-stone-900'}`}>
                               {n.text}

@@ -7,5 +7,6 @@ export function sanitizeUser(user) {
     avatarUrl: user.avatarUrl,
     bio: user.bio,
     createdAt: user.createdAt,
+    hasPassword: !!user.passwordHash,
   };
 }

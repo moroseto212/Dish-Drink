@@ -37,6 +37,7 @@ model User {
   recipes  Recipe[]
   saves    RecipeSave[]
   likes    RecipeLike[]
+  ratings  RecipeRating[]
   comments RecipeComment[]
 
   following Follow[] @relation("Follows")
@@ -101,13 +102,17 @@ model Message {
   senderId       String
   content        String
   isRead         Boolean  @default(false)
+  replyToId      String?
   createdAt      DateTime @default(now())
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo      Message?        @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]       @relation("MessageReplies")
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([replyToId])
 }
 
 model Recipe {
@@ -130,6 +135,7 @@ model Recipe {
   author   User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   saves    RecipeSave[]
   likes    RecipeLike[]
+  ratings  RecipeRating[]
   comments RecipeComment[]
 
   @@index([visibility])
@@ -173,4 +179,17 @@ model RecipeComment {
 
   @@index([recipeId])
   @@index([parentId])
+}
+
+model RecipeRating {
+  userId    String
+  recipeId  String
+  rating    Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, recipeId])
+  @@index([recipeId])
 }

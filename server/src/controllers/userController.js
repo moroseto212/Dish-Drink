@@ -271,3 +271,40 @@ export async function getUserRecipes(req, res) {
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
   }
 }
+
+export async function getSavedRecipes(req, res) {
+  try {
+    const saves = await prisma.recipeSave.findMany({
+      where: { userId: req.user.id },
+      select: {
+        recipe: {
+          select: {
+            ...PROFILE_RECIPE_SELECT,
+            author: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const recipes = saves.map((s) => s.recipe);
+    const recipeIds = recipes.map((r) => r.id);
+
+    let likedMap = {};
+    if (recipeIds.length > 0) {
+      const likes = await prisma.recipeLike.findMany({
+        where: { userId: req.user.id, recipeId: { in: recipeIds } },
+        select: { recipeId: true },
+      });
+      likedMap = Object.fromEntries(likes.map((l) => [l.recipeId, true]));
+    }
+
+    return res.json({
+      recipes: recipes.map((r) => ({ ...r, liked: !!likedMap[r.id], saved: true })),
+    });
+  } catch (err) {
+    console.error('Get saved recipes error:', err);
+    return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
+  }
+}

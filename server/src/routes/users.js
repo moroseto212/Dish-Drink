@@ -4,6 +4,7 @@ import {
   getMe,
   getProfile,
   getUserRecipes,
+  getSavedRecipes,
   searchUsers,
   listMutualUsers,
   followUser,
@@ -15,6 +16,7 @@ const router = express.Router();
 
 router.patch('/me', isAuthenticated, updateMe);
 router.get('/me', isAuthenticated, getMe);
+router.get('/saved', isAuthenticated, getSavedRecipes);
 router.get('/search', isAuthenticated, searchUsers);
 router.get('/mutual', isAuthenticated, listMutualUsers);
 router.get('/:id', getProfile);

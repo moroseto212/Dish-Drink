@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import GoogleButton from '../components/GoogleButton.jsx';
+import Icon from '../components/Icon.jsx';
 
 const sampleRecipes = [
   {
     title: 'Nasi Goreng Spesial',
     author: 'Bunda Rina',
-    emoji: '🍚',
+    icon: 'food',
     from: 'from-orange-400',
     to: 'to-red-500',
     time: '20 mnt',
@@ -15,7 +16,7 @@ const sampleRecipes = [
   {
     title: 'Matcha Latte Hangat',
     author: 'Kopi Senja',
-    emoji: '🍵',
+    icon: 'drink',
     from: 'from-amber-300',
     to: 'to-lime-600',
     time: '10 mnt',
@@ -24,7 +25,7 @@ const sampleRecipes = [
   {
     title: 'Chicken Quesadilla',
     author: 'Chef Andi',
-    emoji: '🌮',
+    icon: 'food',
     from: 'from-red-400',
     to: 'to-orange-600',
     time: '30 mnt',
@@ -46,9 +47,9 @@ function FeedPreview() {
             }`}
           >
             <div className={`relative flex h-40 items-center justify-center bg-gradient-to-br ${r.from} ${r.to}`}>
-              <span className="text-6xl drop-shadow-lg">{r.emoji}</span>
+              <Icon name={r.icon} className="h-14 w-14 text-white drop-shadow-lg" />
               <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                ⏱ {r.time}
+                <><Icon name="clock" className="h-3.5 w-3.5 inline" /> {r.time}</>
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
@@ -248,26 +249,26 @@ export default function Landing() {
                 n: '1',
                 t: 'Buat akun gratis',
                 d: 'Daftar dengan email atau satu ketukan via Google. Tanpa kartu kredit, tanpa syarat.',
-                e: '✍️',
+                icon: 'write',
               },
               {
                 n: '2',
                 t: 'Simpan atau bagikan resep',
                 d: 'Tulis resep sebagai catatan pribadi, atau publikasikan ke komunitas beserta foto hasil masakanmu.',
-                e: '🍳',
+                icon: 'food',
               },
               {
                 n: '3',
                 t: 'Jelajahi & berinteraksi',
                 d: 'Cari resep populer, lihat urutan terbaik, suka, simpan, dan komentar dengan kreator lain.',
-                e: '🔥',
+                icon: 'flame',
               },
             ].map((s) => (
               <div key={s.n} className="relative rounded-3xl border border-cream-200 bg-white p-7 text-center shadow-sm">
                 <span className="absolute -top-4 left-1/2 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-spice-600 text-sm font-bold text-white shadow">
                   {s.n}
                 </span>
-                <span className="text-4xl">{s.e}</span>
+                 <Icon name={s.icon} className="h-10 w-10 text-spice-600" />
                 <h3 className="mt-3 text-lg font-bold text-stone-900">{s.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-stone-600">{s.d}</p>
               </div>

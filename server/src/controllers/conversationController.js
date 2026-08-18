@@ -124,10 +124,30 @@ export async function getMessages(req, res) {
       where: { conversationId: id },
       orderBy: { createdAt: 'asc' },
       take: 200,
-      select: { id: true, content: true, senderId: true, isRead: true, createdAt: true },
+      select: {
+        id: true,
+        content: true,
+        senderId: true,
+        isRead: true,
+        createdAt: true,
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: { select: { id: true, name: true } },
+          },
+        },
+      },
     });
 
-    return res.json({ messages });
+    const shaped = messages.map((m) => ({
+      ...m,
+      replyTo: m.replyTo
+        ? { id: m.replyTo.id, content: m.replyTo.content, senderName: m.replyTo.sender.name, senderId: m.replyTo.sender.id }
+        : null,
+    }));
+
+    return res.json({ messages: shaped });
   } catch (err) {
     console.error('Get messages error:', err);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
@@ -138,6 +158,7 @@ export async function sendMessage(req, res) {
   try {
     const { id } = req.params;
     const content = (req.body?.content || '').toString().trim();
+    const { replyToId } = req.body || {};
     if (!content) {
       return res.status(400).json({ message: 'Pesan tidak boleh kosong' });
     }
@@ -148,13 +169,49 @@ export async function sendMessage(req, res) {
       return res.status(403).json({ message: 'Tidak berhak mengirim pesan di percakapan ini' });
     }
 
+    if (replyToId) {
+      const ref = await prisma.message.findFirst({
+        where: { id: replyToId, conversationId: id },
+        select: { id: true },
+      });
+      if (!ref) {
+        return res.status(400).json({ message: 'Pesan yang dibalas tidak valid' });
+      }
+    }
+
     const message = await prisma.message.create({
-      data: { conversationId: id, senderId: req.user.id, content },
-      select: { id: true, content: true, senderId: true, isRead: true, createdAt: true },
+      data: {
+        conversationId: id,
+        senderId: req.user.id,
+        content,
+        replyToId: replyToId || null,
+      },
+      select: {
+        id: true,
+        content: true,
+        senderId: true,
+        isRead: true,
+        createdAt: true,
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: { select: { id: true, name: true } },
+          },
+        },
+      },
     });
+
+    const shaped = {
+      ...message,
+      replyTo: message.replyTo
+        ? { id: message.replyTo.id, content: message.replyTo.content, senderName: message.replyTo.sender.name, senderId: message.replyTo.sender.id }
+        : null,
+    };
+
     await prisma.conversation.update({ where: { id }, data: { updatedAt: new Date() } });
 
-    return res.status(201).json({ message });
+    return res.status(201).json({ message: shaped });
   } catch (err) {
     console.error('Send message error:', err);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
