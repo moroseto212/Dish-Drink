@@ -1,4 +1,4 @@
-const BASE_URL = '/api';
+const BASE_URL = 'https://dish-drink-production.up.railway.app/api';
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
