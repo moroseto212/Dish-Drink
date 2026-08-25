@@ -150,14 +150,7 @@ export default function Settings() {
                   htmlFor="avatar-file"
                   className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-spice-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-spice-700"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
-                    />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
+                  <Icon name="camera" className="h-4 w-4" />
                   Pilih Foto dari Galeri
                 </label>
                 <input
@@ -213,7 +206,7 @@ export default function Settings() {
                 </div>
               )}
 
-              <div className="mt-4 space-y-4">
+              <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
                 <div>
                   <label htmlFor="current-pw" className="mb-1.5 block text-sm font-semibold text-stone-700">Password lama</label>
                   <input
@@ -250,14 +243,13 @@ export default function Settings() {
                   />
                 </div>
                 <button
-                  type="button"
-                  onClick={handleChangePassword}
+                  type="submit"
                   disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
                   className="rounded-full bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   {pwLoading ? 'Mengubah…' : 'Ubah Password'}
                 </button>
-              </div>
+              </form>
             </section>
           )}
 

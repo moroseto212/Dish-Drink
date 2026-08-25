@@ -22,8 +22,11 @@ const RECIPE_SELECT = {
   },
 };
 
-function buildWhere(search) {
+function buildWhere(search, category) {
   const where = { visibility: 'PUBLIC' };
+  if (category && category !== 'ALL') {
+    where.category = category;
+  }
   if (search && search.trim()) {
     const term = search.trim();
     where.OR = [
@@ -53,8 +56,9 @@ export async function listRecipes(req, res) {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 50);
     const search = req.query.search || '';
     const sort = req.query.sort || 'newest';
+    const category = req.query.category || 'ALL';
 
-    const where = buildWhere(search);
+    const where = buildWhere(search, category);
 
     const [recipes, total] = await Promise.all([
       prisma.recipe.findMany({
@@ -172,7 +176,7 @@ export async function getRecipe(req, res) {
       },
     });
   } catch (err) {
-    console.error('Get recipe error:', err);
+    console.error('Get recipe error:', err.message, err.stack);
     return res.status(500).json({ message: 'Terjadi kesalahan pada server' });
   }
 }
@@ -185,8 +189,18 @@ export async function createRecipe(req, res) {
     if (!title || !title.trim()) {
       return res.status(400).json({ message: 'Judul resep wajib diisi' });
     }
+    if (title.trim().length > 100) {
+      return res.status(400).json({ message: 'Judul resep maksimal 100 karakter' });
+    }
+    if (description && description.length > 1000) {
+      return res.status(400).json({ message: 'Deskripsi resep maksimal 1000 karakter' });
+    }
     if (!Array.isArray(ingredients) || ingredients.length === 0) {
       return res.status(400).json({ message: 'Bahan resep wajib diisi' });
+    }
+    const invalidIng = ingredients.find((ing) => !ing.name || !ing.name.trim());
+    if (invalidIng) {
+      return res.status(400).json({ message: 'Setiap bahan wajib memiliki nama' });
     }
     if (!Array.isArray(steps) || steps.length === 0) {
       return res.status(400).json({ message: 'Langkah memasak wajib diisi' });
@@ -230,6 +244,28 @@ export async function updateRecipe(req, res) {
 
     const { title, description, coverUrl, category, ingredients, steps, prepTime, cookTime, servings, difficulty, visibility } =
       req.body || {};
+
+    if (title !== undefined && (!title || !title.trim())) {
+      return res.status(400).json({ message: 'Judul resep wajib diisi' });
+    }
+    if (title !== undefined && title.trim().length > 100) {
+      return res.status(400).json({ message: 'Judul resep maksimal 100 karakter' });
+    }
+    if (description !== undefined && description && description.length > 1000) {
+      return res.status(400).json({ message: 'Deskripsi resep maksimal 1000 karakter' });
+    }
+    if (ingredients !== undefined && (!Array.isArray(ingredients) || ingredients.length === 0)) {
+      return res.status(400).json({ message: 'Bahan resep wajib diisi' });
+    }
+    if (ingredients !== undefined) {
+      const invalidIng = ingredients.find((ing) => !ing.name || !ing.name.trim());
+      if (invalidIng) {
+        return res.status(400).json({ message: 'Setiap bahan wajib memiliki nama' });
+      }
+    }
+    if (steps !== undefined && (!Array.isArray(steps) || steps.length === 0)) {
+      return res.status(400).json({ message: 'Langkah memasak wajib diisi' });
+    }
 
     const recipe = await prisma.recipe.update({
       where: { id },

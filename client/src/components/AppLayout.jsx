@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { notificationApi, conversationApi } from '../api.js';
 import Logo from './Logo.jsx';
+import Icon from './Icon.jsx';
 
 const navItems = [
   { to: '/feed', label: 'Beranda', icon: 'home' },
@@ -10,7 +11,7 @@ const navItems = [
   { to: '/explore', label: 'Cari Teman', icon: 'search' },
   { to: '/messages', label: 'Pesan', icon: 'chat' },
   { to: '/profile', label: 'Profil Saya', icon: 'user' },
-  { to: '/settings', label: 'Pengaturan', icon: 'gear' },
+  { to: '/settings', label: 'Pengaturan', icon: 'settings' },
 ];
 
 function timeAgo(dateStr) {
@@ -25,91 +26,14 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-function Icon({ name, className = 'h-5 w-5' }) {
-  const props = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, viewBox: '0 0 24 24', className };
-  switch (name) {
-    case 'home':
-      return (
-        <svg {...props}>
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <path d="M9 22V12h6v10" />
-        </svg>
-      );
-    case 'search':
-      return (
-        <svg {...props}>
-          <circle cx="11" cy="11" r="8" />
-          <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
-        </svg>
-      );
-    case 'user':
-      return (
-        <svg {...props}>
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      );
-    case 'plus':
-      return (
-        <svg {...props}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-        </svg>
-      );
-    case 'gear':
-      return (
-        <svg {...props}>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-      );
-    case 'logout':
-      return (
-        <svg {...props}>
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16 17l5-5-5-5M21 12H9" />
-        </svg>
-      );
-    case 'bell':
-      return (
-        <svg {...props}>
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-        </svg>
-      );
-    case 'chat':
-      return (
-        <svg {...props}>
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      );
-    case 'bookmark':
-      return (
-        <svg {...props}>
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        </svg>
-      );
-    case 'menu':
-      return (
-        <svg {...props}>
-          <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      );
-    case 'close':
-      return (
-        <svg {...props}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
 function SidebarBody({ onNavigate, notifications, unreadCount, msgUnread, bellOpen, onToggleBell }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   const handleLogout = async () => {
+    setLogoutLoading(true);
     onNavigate?.();
     await logout();
     navigate('/');
@@ -186,7 +110,7 @@ function SidebarBody({ onNavigate, notifications, unreadCount, msgUnread, bellOp
             </div>
 
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutModal(true)}
               className="rounded-lg p-2 text-stone-400 transition hover:bg-red-50 hover:text-ember-600"
               title="Keluar"
               aria-label="Keluar"
@@ -250,6 +174,38 @@ function SidebarBody({ onNavigate, notifications, unreadCount, msgUnread, bellOp
           </div>
         )}
       </div>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowLogoutModal(false)} />
+          <div className="relative w-full max-w-sm rounded-3xl border border-cream-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100 text-xl"><Icon name="logout" className="h-5 w-5 text-red-600" /></span>
+              <h3 className="text-lg font-extrabold text-stone-900">Keluar Akun?</h3>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-stone-500">
+              Kamu akan keluar dari akun dan kembali ke halaman utama. Kamu bisa masuk kembali kapan saja.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="rounded-full border border-cream-300 bg-white px-5 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-cream-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={logoutLoading}
+                className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-red-600/25 transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {logoutLoading ? 'Keluar…' : 'Ya, Keluar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -336,7 +292,7 @@ export default function AppLayout({ children }) {
               className="absolute right-3 top-4 z-10 rounded-lg p-1.5 text-stone-500 transition hover:bg-cream-100"
               aria-label="Tutup menu"
             >
-              <Icon name="close" className="h-5 w-5" />
+              <Icon name="x" className="h-5 w-5" />
             </button>
             <SidebarBody {...sidebarProps} onNavigate={() => setMobileOpen(false)} />
           </aside>

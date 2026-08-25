@@ -28,7 +28,6 @@ model User {
   email        String    @unique
   name         String
   avatarUrl    String?
-  googleId     String?   @unique
   passwordHash String?
   bio          String?   @default("")
   createdAt    DateTime  @default(now())

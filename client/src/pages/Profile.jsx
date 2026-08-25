@@ -73,7 +73,7 @@ export default function Profile() {
               <div className="h-32 bg-gradient-to-r from-spice-500 via-ember-500 to-red-500" />
 
               <div className="px-6 pb-6 sm:px-8">
-                <div className="-mt-12 flex items-end justify-between">
+                <div className="-mt-12">
                   {profile.avatarUrl ? (
                     <img
                       src={profile.avatarUrl}
@@ -85,38 +85,35 @@ export default function Profile() {
                       {profile.name?.charAt(0)?.toUpperCase()}
                     </span>
                   )}
-
-                  {!isSelf && currentUser && (
-                    <div className="flex gap-2 pb-2">
-                      {profile.isFollowing && profile.isFollowedBy && (
-                        <Link
-                          to={`/messages?user=${profile.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-5 py-2.5 text-sm font-bold text-stone-700 shadow-sm transition hover:bg-cream-50"
-                        >
-                           <Icon name="chat" className="h-4 w-4" /> Chat
-                        </Link>
-                      )}
-                      <FollowButton
-                        key={`${profile.id}-${profile.isFollowing}`}
-                        userId={profile.id}
-                        initialFollowing={profile.isFollowing}
-                        onToggle={handleFollowToggle}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <div className="mt-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h1 className="text-2xl font-extrabold tracking-tight text-stone-900">{profile.name}</h1>
+                    {!isSelf && currentUser && (
+                      <div className="flex items-center gap-2">
+                        {profile.isFollowing && profile.isFollowedBy && (
+                          <Link
+                            to={`/messages?user=${profile.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-4 py-1.5 text-xs font-bold text-stone-700 shadow-sm transition hover:bg-cream-50"
+                          >
+                            <Icon name="chat" className="h-3.5 w-3.5" /> Chat
+                          </Link>
+                        )}
+                        <FollowButton
+                          key={`${profile.id}-${profile.isFollowing}`}
+                          userId={profile.id}
+                          initialFollowing={profile.isFollowing}
+                          onToggle={handleFollowToggle}
+                        />
+                      </div>
+                    )}
                     {isSelf && (
                       <Link
                         to="/recipes/new"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-ember-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-ember-600/25 transition hover:bg-ember-700"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-ember-600 px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-ember-600/25 transition hover:bg-ember-700"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-                        </svg>
+                        <Icon name="plus" className="h-3.5 w-3.5" />
                         Tambah Resep
                       </Link>
                     )}
@@ -126,7 +123,7 @@ export default function Profile() {
                   </p>
                 </div>
 
-                <div className="mt-6 flex gap-8 border-t border-cream-200 pt-5">
+                <div className="mt-6 flex gap-6 overflow-x-auto border-t border-cream-200 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-8">
                   <div>
                     <p className="text-xl font-extrabold text-spice-600">{recipes.length}</p>
                     <p className="text-xs font-medium text-stone-500">Resep{isSelf ? ' (semua)' : ' publik'}</p>

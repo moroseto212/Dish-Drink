@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Logo from '../components/Logo.jsx';
-import GoogleButton from '../components/GoogleButton.jsx';
 
 export default function Register() {
   const { register } = useAuth();
@@ -41,23 +40,13 @@ export default function Register() {
           <h1 className="text-2xl font-extrabold text-stone-900">Buat akun gratis</h1>
           <p className="mt-1 text-sm text-stone-500">Mulai buku resep pribadimu hari ini. Tanpa biaya apa pun.</p>
 
-          <div className="mt-6">
-            <GoogleButton label="Daftar dengan Google" />
-          </div>
-
-          <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-cream-200" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">atau</span>
-            <span className="h-px flex-1 bg-cream-200" />
-          </div>
-
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <div className="mt-6 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
               <label htmlFor="name" className="mb-1.5 block text-sm font-semibold text-stone-700">
                 Nama

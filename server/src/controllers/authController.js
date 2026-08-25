@@ -93,7 +93,7 @@ export async function changePassword(req, res) {
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user || !user.passwordHash) {
-      return res.status(400).json({ message: 'Akun ini menggunakan Google OAuth' });
+      return res.status(400).json({ message: 'Akun tidak memiliki password' });
     }
 
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);

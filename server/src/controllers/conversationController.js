@@ -1,6 +1,11 @@
 import prisma from '../prisma.js';
 
 async function isParticipant(conversationId, userId) {
+  const conv = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    select: { id: true },
+  });
+  if (!conv) return false;
   const count = await prisma.conversationParticipant.count({
     where: { conversationId, userId },
   });
@@ -116,6 +121,11 @@ export async function openConversation(req, res) {
 export async function getMessages(req, res) {
   try {
     const { id } = req.params;
+
+    const conv = await prisma.conversation.findUnique({ where: { id }, select: { id: true } });
+    if (!conv) {
+      return res.status(404).json({ message: 'Percakapan tidak ditemukan' });
+    }
     if (!(await isParticipant(id, req.user.id))) {
       return res.status(403).json({ message: 'Tidak berhak mengakses percakapan ini' });
     }
@@ -164,6 +174,11 @@ export async function sendMessage(req, res) {
     }
     if (content.length > 2000) {
       return res.status(400).json({ message: 'Pesan terlalu panjang (maks 2000 karakter)' });
+    }
+
+    const conv = await prisma.conversation.findUnique({ where: { id }, select: { id: true } });
+    if (!conv) {
+      return res.status(404).json({ message: 'Percakapan tidak ditemukan' });
     }
     if (!(await isParticipant(id, req.user.id))) {
       return res.status(403).json({ message: 'Tidak berhak mengirim pesan di percakapan ini' });

@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Logo from './Logo.jsx';
+import Icon from './Icon.jsx';
 
 export default function Navbar({ transparent = false }) {
   const { user, logout } = useAuth();
@@ -40,15 +41,7 @@ export default function Navbar({ transparent = false }) {
         {user && (
           <form onSubmit={handleSearch} className="hidden flex-1 max-w-md md:block">
             <div className="relative">
-              <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-              </svg>
+              <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -134,7 +127,7 @@ export default function Navbar({ transparent = false }) {
             <>
               <Link
                 to="/login"
-                className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-cream-200"
+                className="hidden rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-cream-200 sm:inline-block"
               >
                 Sign In
               </Link>
@@ -142,7 +135,8 @@ export default function Navbar({ transparent = false }) {
                 to="/register"
                 className="rounded-full bg-ember-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-ember-700"
               >
-                Sign Up Gratis
+                <span className="hidden sm:inline">Sign Up Gratis</span>
+                <span className="sm:hidden">Daftar</span>
               </Link>
             </>
           )}

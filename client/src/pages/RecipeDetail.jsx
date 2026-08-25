@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { recipeApi, conversationApi } from '../api.js';
+import { formatIngredient, parseLegacyIngredient } from '../constants.js';
 import Icon from '../components/Icon.jsx';
 
 const difficultyLabel = { EASY: 'Mudah', MEDIUM: 'Sedang', HARD: 'Sulit' };
@@ -27,6 +28,8 @@ export default function RecipeDetail() {
   const [ratingBusy, setRatingBusy] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
+  const [showDeleteRecipe, setShowDeleteRecipe] = useState(false);
+  const [deleteRecipeLoading, setDeleteRecipeLoading] = useState(false);
 
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -172,10 +175,7 @@ export default function RecipeDetail() {
 
   const copyShoppingList = () => {
     if (!recipe) return;
-    const lines = recipe.ingredients.map((ing) => {
-      const item = typeof ing === 'string' ? { name: ing } : ing;
-      return `- ${item.amount ? item.amount + ' ' : ''}${item.name}`;
-    });
+    const lines = recipe.ingredients.map((ing) => `- ${formatIngredient(ing)}`);
     const text = `Belanjaan untuk: ${recipe.title}\n\n${lines.join('\n')}`;
     navigator.clipboard.writeText(text).catch(() => {});
   };
@@ -262,6 +262,19 @@ export default function RecipeDetail() {
       setError(err.message);
     } finally {
       setCommentToDelete(null);
+    }
+  };
+
+  const handleDeleteRecipe = async () => {
+    if (!recipe) return;
+    setDeleteRecipeLoading(true);
+    try {
+      await recipeApi.remove(recipe.id);
+      navigate('/profile');
+    } catch (err) {
+      setError(err.message);
+      setDeleteRecipeLoading(false);
+      setShowDeleteRecipe(false);
     }
   };
 
@@ -354,9 +367,7 @@ export default function RecipeDetail() {
     <>
     <main className="mx-auto max-w-4xl">
         <Link to="/feed" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-spice-600 hover:text-spice-700">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+          <Icon name="chevron-left" className="h-4 w-4" />
           Kembali ke Feed
         </Link>
 
@@ -386,13 +397,34 @@ export default function RecipeDetail() {
             </div>
 
             <div className="p-6 sm:p-8">
-              <h1 className="text-3xl font-extrabold tracking-tight text-stone-900">{recipe.title}</h1>
-              <p className="mt-1.5 text-sm text-stone-500">
-                oleh{' '}
-                <Link to={`/u/${recipe.author?.id}`} className="font-semibold text-stone-700 hover:text-spice-600">
-                  {recipe.author?.name}
-                </Link>
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-3xl font-extrabold tracking-tight text-stone-900">{recipe.title}</h1>
+                  <p className="mt-1.5 text-sm text-stone-500">
+                    oleh{' '}
+                    <Link to={`/u/${recipe.author?.id}`} className="font-semibold text-stone-700 hover:text-spice-600">
+                      {recipe.author?.name}
+                    </Link>
+                  </p>
+                </div>
+                {user && recipe.authorId === user.id && (
+                  <div className="flex shrink-0 gap-2">
+                    <Link
+                      to={`/recipes/${recipe.id}/edit`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-4 py-2 text-xs font-bold text-stone-700 shadow-sm transition hover:bg-cream-50"
+                    >
+                      <Icon name="write" className="h-3.5 w-3.5" /> Edit
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteRecipe(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-50"
+                    >
+                      <Icon name="trash" className="h-3.5 w-3.5" /> Hapus
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
                 <span className="flex items-center gap-1 rounded-full bg-spice-100 px-3 py-1.5 text-spice-700">
@@ -506,16 +538,21 @@ export default function RecipeDetail() {
                       <><Icon name="cart" className="h-5 w-5 inline" /> Daftar Belanja</>
                     </button>
                   </div>
-                  <ul className="mt-4 space-y-2.5">
+                  <ul className="mt-4 space-y-2">
                     {(recipe.ingredients || []).map((ing, i) => {
-                      const item = typeof ing === 'string' ? { name: ing } : ing;
+                      const item = parseLegacyIngredient(ing);
+                      const hasQty = item.amount || item.unit;
                       return (
-                        <li key={i} className="flex items-start gap-3 text-sm text-stone-700">
-                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-spice-500" />
-                          <span>
-                            {item.amount && <strong className="mr-1.5 text-stone-900">{item.amount}</strong>}
-                            {item.name}
+                        <li key={i} className="flex items-center gap-3 rounded-xl bg-cream-50 px-4 py-2.5">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-spice-100 text-xs font-bold text-spice-600">
+                            {i + 1}
                           </span>
+                          {hasQty && (
+                            <span className="shrink-0 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-stone-700 shadow-sm ring-1 ring-cream-200">
+                              {item.amount}{item.amount && item.unit ? ' ' : ''}{item.unit}
+                            </span>
+                          )}
+                          <span className="text-sm font-medium text-stone-800">{item.name}</span>
                         </li>
                       );
                     })}
@@ -551,9 +588,11 @@ export default function RecipeDetail() {
                       : 'border-cream-300 bg-white text-stone-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
                   }`}
                 >
-                  <svg viewBox="0 0 24 24" fill={recipe.liked ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" className="h-4 w-4">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+                  {recipe.liked ? (
+                    <Icon name="heart-filled" className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Icon name="heart" className="h-4 w-4 text-red-500" />
+                  )}
                   {recipe._count?.likes ?? 0} Suka
                 </button>
                 <button
@@ -566,15 +605,15 @@ export default function RecipeDetail() {
                       : 'border-cream-300 bg-white text-stone-600 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700'
                   }`}
                 >
-                  <svg viewBox="0 0 24 24" fill={recipe.saved ? '#f59e0b' : 'none'} stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
+                  {recipe.saved ? (
+                    <Icon name="bookmark-filled" className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <Icon name="bookmark" className="h-4 w-4" />
+                  )}
                   {recipe._count?.saves ?? 0} Simpan
                 </button>
                 <span className="flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-4 py-2 text-stone-600">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
+                  <Icon name="chat" className="h-4 w-4" />
                   {recipe._count?.comments ?? 0} Komentar
                 </span>
                 {user && (
@@ -583,9 +622,7 @@ export default function RecipeDetail() {
                     onClick={openShareModal}
                     className="flex items-center gap-1.5 rounded-full border border-cream-300 bg-white px-4 py-2 text-stone-600 transition hover:border-spice-300 hover:bg-spice-50 hover:text-spice-700"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-                    </svg>
+                    <Icon name="share" className="h-4 w-4" />
                     Bagikan
                   </button>
                 )}
@@ -667,9 +704,7 @@ export default function RecipeDetail() {
             <div className="flex items-center justify-between border-b border-cream-200 px-6 py-4">
               <h3 className="flex items-center gap-2 text-lg font-extrabold text-stone-900"><Icon name="share" className="h-5 w-5" /> Bagikan ke Chat</h3>
               <button onClick={() => setShowShareModal(false)} className="rounded-full p-1 text-stone-400 transition hover:bg-cream-100 hover:text-stone-600">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icon name="x" className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto px-6 py-4" style={{ maxHeight: 'calc(80vh - 8rem)' }}>
@@ -710,23 +745,22 @@ export default function RecipeDetail() {
             <div className="flex items-center justify-between border-b border-cream-200 px-6 py-4">
               <h3 className="flex items-center gap-2 text-lg font-extrabold text-stone-900"><Icon name="cart" className="h-5 w-5" /> Daftar Belanja</h3>
               <button onClick={() => setShowShoppingList(false)} className="rounded-full p-1 text-stone-400 transition hover:bg-cream-100 hover:text-stone-600">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icon name="x" className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto px-6 py-4" style={{ maxHeight: 'calc(80vh - 8rem)' }}>
               <p className="mb-3 text-xs font-semibold text-stone-400">{recipe.title}</p>
               <ul className="space-y-2">
                 {recipe.ingredients.map((ing, idx) => {
-                  const item = typeof ing === 'string' ? { name: ing } : ing;
+                  const item = parseLegacyIngredient(ing);
                   const checked = !!checkedItems[idx];
+                  const hasQty = item.amount || item.unit;
                   return (
                     <li key={idx}>
                       <button
                         type="button"
                         onClick={() => toggleShoppingItem(idx)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                           checked ? 'bg-green-50 text-green-700 line-through' : 'bg-cream-50 text-stone-700 hover:bg-cream-100'
                         }`}
                       >
@@ -735,10 +769,12 @@ export default function RecipeDetail() {
                         }`}>
                           {checked && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </span>
-                        <span>
-                          {item.amount && <strong className="mr-1">{item.amount}</strong>}
-                          {item.name}
-                        </span>
+                        {hasQty && (
+                          <span className="shrink-0 rounded-md bg-white px-2 py-0.5 text-xs font-bold ring-1 ring-cream-200">
+                            {item.amount}{item.amount && item.unit ? ' ' : ''}{item.unit}
+                          </span>
+                        )}
+                        <span className="text-sm font-medium">{item.name}</span>
                       </button>
                     </li>
                   );
@@ -752,6 +788,27 @@ export default function RecipeDetail() {
                 className="w-full rounded-full bg-spice-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-spice-700"
               >
                 <><Icon name="copy" className="h-5 w-5 inline" /> Salin ke Clipboard</>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteRecipe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteRecipe(false)} />
+          <div className="relative w-full max-w-sm rounded-3xl border border-cream-200 bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-100"><Icon name="trash" className="h-5 w-5 text-red-500" /></span>
+              <h3 className="text-lg font-extrabold text-stone-900">Hapus Resep?</h3>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-stone-500">
+              Resep "{recipe?.title}" akan dihapus permanen beserta semua komentar, suka, dan simpan. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowDeleteRecipe(false)} className="rounded-full border border-cream-300 bg-white px-5 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-cream-50">Batal</button>
+              <button type="button" onClick={handleDeleteRecipe} disabled={deleteRecipeLoading} className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-red-600/25 transition hover:bg-red-700 disabled:opacity-50">
+                {deleteRecipeLoading ? 'Menghapus…' : 'Ya, Hapus'}
               </button>
             </div>
           </div>

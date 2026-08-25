@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recipeApi, uploadApi } from '../api.js';
+import { UNIT_GROUPS } from '../constants.js';
 import Icon from '../components/Icon.jsx';
 
 const difficultyOptions = [
@@ -34,15 +35,27 @@ export default function NewRecipe() {
   const [servings, setServings] = useState('');
   const [difficulty, setDifficulty] = useState('MEDIUM');
   const [visibility, setVisibility] = useState('PRIVATE');
-  const [ingredients, setIngredients] = useState([{ amount: '', name: '' }]);
+  const [ingredients, setIngredients] = useState([{ amount: '', unit: '', name: '' }]);
   const [steps, setSteps] = useState(['']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   const updateIngredient = (i, field, value) =>
     setIngredients((prev) => prev.map((ing, idx) => (idx === i ? { ...ing, [field]: value } : ing)));
 
-  const addIngredient = () => setIngredients((prev) => [...prev, { amount: '', name: '' }]);
+  const addIngredient = () => setIngredients((prev) => [...prev, { amount: '', unit: '', name: '' }]);
   const removeIngredient = (i) => setIngredients((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
 
   const updateStep = (i, value) => setSteps((prev) => prev.map((s, idx) => (idx === i ? value : s)));
@@ -63,11 +76,13 @@ export default function NewRecipe() {
     setError('');
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
+    setIsDirty(true);
   };
 
   const handleRemoveCover = () => {
     setCoverFile(null);
     setCoverPreview('');
+    setIsDirty(true);
   };
 
   const handleSubmit = async (e) => {
@@ -77,7 +92,11 @@ export default function NewRecipe() {
 
     const cleanIngredients = ingredients
       .filter((ing) => ing.name.trim())
-      .map((ing) => ({ amount: ing.amount.trim(), name: ing.name.trim() }));
+      .map((ing) => ({
+        amount: ing.amount.trim(),
+        unit: ing.unit || '',
+        name: ing.name.trim(),
+      }));
 
     const cleanSteps = steps.filter((s) => s.trim());
 
@@ -92,7 +111,7 @@ export default function NewRecipe() {
         coverUrl = uploadData.url;
       }
 
-      await recipeApi.create({
+      const { recipe } = await recipeApi.create({
         title,
         description,
         coverUrl,
@@ -105,7 +124,9 @@ export default function NewRecipe() {
         difficulty,
         visibility,
       });
-      navigate('/profile');
+      setIsDirty(false);
+      setToast('Resep berhasil dibuat!');
+      setTimeout(() => navigate(`/recipes/${recipe.id}`), 800);
     } catch (err) {
       fail(err.message);
     }
@@ -129,7 +150,13 @@ export default function NewRecipe() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+        {toast && (
+          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-700">
+            {toast}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} onChange={() => setIsDirty(true)} className="mt-8 space-y-8">
           {/* Kategori */}
           <section className="rounded-3xl border border-cream-200 bg-white p-6 shadow-sm">
             <SectionTitle iconName="food" title="Jenis resep" />
@@ -165,17 +192,20 @@ export default function NewRecipe() {
             <div className="mt-4 space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-stone-700">Judul resep *</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="cth: Nasi Goreng Spesial" className={inputClass} />
+                <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} placeholder="cth: Nasi Goreng Spesial" className={inputClass} />
+                <p className="mt-1 text-right text-xs text-stone-400">{title.length}/100</p>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-stone-700">Deskripsi</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  maxLength={1000}
                   rows={3}
                   placeholder="Cerita singkat tentang resep ini…"
                   className={inputClass}
                 />
+                <p className="mt-1 text-right text-xs text-stone-400">{description.length}/1000</p>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-stone-700">Foto resep</label>
@@ -194,14 +224,7 @@ export default function NewRecipe() {
                       htmlFor="cover-file"
                       className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-spice-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-spice-700"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
-                        />
-                        <circle cx="12" cy="13" r="4" />
-                      </svg>
+                      <Icon name="camera" className="h-4 w-4" />
                       Pilih Foto dari Galeri
                     </label>
                     <input id="cover-file" type="file" accept="image/*" onChange={handlePickCover} className="hidden" />
@@ -272,32 +295,50 @@ export default function NewRecipe() {
                 + Tambah Bahan
               </button>
             </div>
-            <div className="mt-4 space-y-3">
+            <p className="mb-3 text-xs text-stone-500">Setiap bahan harus memiliki jumlah, satuan, dan nama.</p>
+            <div className="space-y-3">
               {ingredients.map((ing, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-6 text-center text-sm font-bold text-stone-400">{i + 1}</span>
-                  <input
-                    value={ing.amount}
-                    onChange={(e) => updateIngredient(i, 'amount', e.target.value)}
-                    placeholder="Takaran (cth: 2 sdm)"
-                    className={`${inputClass} w-2/5`}
-                  />
+                <div key={i} className="rounded-xl border border-cream-200 bg-cream-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-spice-100 text-xs font-bold text-spice-600">{i + 1}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={ing.amount}
+                      onChange={(e) => updateIngredient(i, 'amount', e.target.value)}
+                      placeholder="Jml"
+                      className="w-16 shrink-0 rounded-lg border border-cream-300 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200"
+                    />
+                    <select
+                      value={ing.unit}
+                      onChange={(e) => updateIngredient(i, 'unit', e.target.value)}
+                      className="w-36 shrink-0 rounded-lg border border-cream-300 bg-white px-2.5 py-2 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200"
+                    >
+                      <option value="">Satuan</option>
+                      {UNIT_GROUPS.map((group) => (
+                        <optgroup key={group.label} label={group.label}>
+                          {group.units.map((u) => (
+                            <option key={u.value} value={u.value}>{u.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeIngredient(i)}
+                      className="ml-auto shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50"
+                      aria-label="Hapus bahan"
+                    >
+                      <Icon name="x" className="h-4 w-4" />
+                    </button>
+                  </div>
                   <input
                     value={ing.name}
                     onChange={(e) => updateIngredient(i, 'name', e.target.value)}
                     placeholder="Nama bahan *"
-                    className={inputClass}
+                    className="mt-2 w-full rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-spice-400 focus:ring-2 focus:ring-spice-200"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeIngredient(i)}
-                    className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50"
-                    aria-label="Hapus bahan"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
               ))}
             </div>
@@ -334,9 +375,7 @@ export default function NewRecipe() {
                     className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50"
                     aria-label="Hapus langkah"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="x" className="h-5 w-5" />
                   </button>
                 </div>
               ))}

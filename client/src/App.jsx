@@ -10,6 +10,7 @@ import Messages from './pages/Messages.jsx';
 import Profile from './pages/Profile.jsx';
 import RecipeDetail from './pages/RecipeDetail.jsx';
 import NewRecipe from './pages/NewRecipe.jsx';
+import EditRecipe from './pages/EditRecipe.jsx';
 import Settings from './pages/Settings.jsx';
 import SavedRecipes from './pages/SavedRecipes.jsx';
 
@@ -99,6 +100,16 @@ export default function App() {
           <Protected>
             <AppLayout>
               <NewRecipe />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      <Route
+        path="/recipes/:id/edit"
+        element={
+          <Protected>
+            <AppLayout>
+              <EditRecipe />
             </AppLayout>
           </Protected>
         }

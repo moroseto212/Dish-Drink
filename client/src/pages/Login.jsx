@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Logo from '../components/Logo.jsx';
-import GoogleButton from '../components/GoogleButton.jsx';
 
 export default function Login() {
   const { login } = useAuth();
@@ -13,7 +12,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const googleError = searchParams.get('error') === 'google';
   const justRegistered = searchParams.get('registered') === '1';
 
   const handleSubmit = async (e) => {
@@ -44,33 +42,18 @@ export default function Login() {
           <h1 className="text-2xl font-extrabold text-stone-900">Sign In</h1>
           <p className="mt-1 text-sm text-stone-500">Selamat datang kembali, ayo lanjut memasak.</p>
 
-          <div className="mt-6">
-            <GoogleButton />
-          </div>
-
-          <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-cream-200" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">atau</span>
-            <span className="h-px flex-1 bg-cream-200" />
-          </div>
-
           {justRegistered && (
-            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            <div className="mt-6 mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
               Akun berhasil dibuat! Silakan masuk dengan akun barumu.
             </div>
           )}
-          {googleError && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-              Gagal masuk dengan Google. Silakan coba lagi.
-            </div>
-          )}
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            <div className="mt-6 mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-stone-700">
                 Email

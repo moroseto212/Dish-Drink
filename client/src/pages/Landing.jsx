@@ -1,33 +1,26 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
-import GoogleButton from '../components/GoogleButton.jsx';
 import Icon from '../components/Icon.jsx';
 
 const sampleRecipes = [
   {
     title: 'Nasi Goreng Spesial',
     author: 'Bunda Rina',
-    icon: 'food',
-    from: 'from-orange-400',
-    to: 'to-red-500',
+    image: '/images/nasi-goreng-spesial.jpeg',
     time: '20 mnt',
     likes: '1.2rb',
   },
   {
     title: 'Matcha Latte Hangat',
     author: 'Kopi Senja',
-    icon: 'drink',
-    from: 'from-amber-300',
-    to: 'to-lime-600',
+    image: '/images/matcha-latte-hangat.jpeg',
     time: '10 mnt',
     likes: '980',
   },
   {
     title: 'Chicken Quesadilla',
     author: 'Chef Andi',
-    icon: 'food',
-    from: 'from-red-400',
-    to: 'to-orange-600',
+    image: '/images/chicken-quesadilla.jpeg',
     time: '30 mnt',
     likes: '2.4rb',
   },
@@ -38,7 +31,7 @@ function FeedPreview() {
     <div className="relative mx-auto w-full max-w-sm">
       <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-spice-200 via-ember-600/20 to-amber-200 blur-2xl" />
 
-      <div className="relative space-y-4">
+      <div className="relative space-y-4 overflow-hidden">
         {sampleRecipes.map((r, i) => (
           <div
             key={r.title}
@@ -46,10 +39,10 @@ function FeedPreview() {
               i === 1 ? 'rotate-2' : i === 2 ? '-rotate-1' : ''
             }`}
           >
-            <div className={`relative flex h-40 items-center justify-center bg-gradient-to-br ${r.from} ${r.to}`}>
-              <Icon name={r.icon} className="h-14 w-14 text-white drop-shadow-lg" />
+            <div className="relative h-40">
+              <img src={r.image} alt={r.title} className="h-full w-full object-cover" />
               <span className="absolute right-3 top-3 rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                <><Icon name="clock" className="h-3.5 w-3.5 inline" /> {r.time}</>
+                <Icon name="clock" className="h-3.5 w-3.5 inline" /> {r.time}
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
@@ -59,18 +52,10 @@ function FeedPreview() {
               </div>
               <div className="flex items-center gap-3 text-stone-600">
                 <span className="flex items-center gap-1 text-xs font-semibold">
-                  <svg viewBox="0 0 24 24" fill="#ef4444" className="h-4 w-4">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+                  <Icon name="heart-filled" className="h-4 w-4 text-red-500" />
                   {r.likes}
                 </span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 16.5V4m0 12.5l-3-3m3 3l3-3M4 20h16"
-                  />
-                </svg>
+                <Icon name="download" className="h-4 w-4" />
               </div>
             </div>
           </div>
@@ -82,7 +67,7 @@ function FeedPreview() {
 
 function FeatureCard({ icon, title, desc, accent }) {
   return (
-    <div className="group rounded-3xl border border-cream-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+    <div className="group rounded-3xl border border-cream-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-6">
       <div
         className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-md ${accent}`}
       >
@@ -104,14 +89,14 @@ export default function Landing() {
         <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-spice-300/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-ember-500/10 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-14 lg:grid-cols-2 lg:pt-20">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-10 sm:gap-12 sm:pb-20 sm:pt-14 lg:grid-cols-2 lg:pt-20">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-spice-200 bg-spice-50 px-3 py-1.5 text-xs font-semibold text-spice-700">
               <span className="h-2 w-2 rounded-full bg-spice-500" />
               Platform resep hibrida ala Instagram
             </span>
 
-            <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-stone-900 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 text-3xl font-extrabold leading-[1.1] tracking-tight text-stone-900 sm:text-4xl lg:text-5xl">
               Simpan resepmu.{' '}
               <span className="bg-gradient-to-r from-spice-600 to-ember-600 bg-clip-text text-transparent">
                 Bagikan
@@ -119,7 +104,7 @@ export default function Landing() {
               hasil masakanmu.
             </h1>
 
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-stone-600">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg">
               <strong className="font-semibold text-stone-800">Dish &amp; Drink</strong> menggabungkan buku catatan
               resep pribadi yang privat dengan komunitas publik untuk berbagi inspirasi, berinteraksi, dan memamerkan
               hasil masakanmu — lengkap dengan foto.
@@ -131,9 +116,7 @@ export default function Landing() {
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-ember-600 px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-ember-600/30 transition hover:bg-ember-700"
               >
                 Mulai Gratis Sekarang
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
-                </svg>
+                <Icon name="arrow-right" className="h-4 w-4" />
               </Link>
               <Link
                 to="/login"
@@ -143,19 +126,15 @@ export default function Landing() {
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center gap-3">
-              <GoogleButton label="atau masuk dengan Google" className="max-w-xs" />
-            </div>
-
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-stone-500">
               <span className="flex items-center gap-1.5">
-                <Check className="text-spice-600" /> 100% Gratis, tanpa paywall
+                <Icon name="check" className="h-4 w-4 text-spice-600" /> 100% Gratis, tanpa paywall
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="text-spice-600" /> Tanpa batas pencarian
+                <Icon name="check" className="h-4 w-4 text-spice-600" /> Tanpa batas pencarian
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="text-spice-600" /> Tanpa kartu kredit
+                <Icon name="check" className="h-4 w-4 text-spice-600" /> Tanpa kartu kredit
               </span>
             </div>
           </div>
@@ -166,7 +145,7 @@ export default function Landing() {
 
       {/* STATS */}
       <section className="border-y border-cream-200 bg-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 text-center md:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-10 text-center sm:grid-cols-2 md:grid-cols-4">
           {[
             { n: '100%', l: 'Gratis, selamanya' },
             { n: '∞', l: 'Resep bisa disimpan' },
@@ -182,10 +161,10 @@ export default function Landing() {
       </section>
 
       {/* FEATURES */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:py-16 md:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-bold uppercase tracking-widest text-spice-600">Fitur Unggulan</p>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-stone-900 sm:text-3xl md:text-4xl">
             Semua yang kamu butuhkan untuk resep &amp; komunitas
           </h2>
           <p className="mt-4 text-stone-600">
@@ -198,47 +177,47 @@ export default function Landing() {
             accent="bg-spice-500 shadow-spice-500/30"
             title="Buku Resep Pribadi"
             desc="Simpan resep andalanmu sebagai catatan pribadi yang privat — hanya kamu yang bisa melihat."
-            icon={<IconLock />}
+            icon={<Icon name="lock" className="h-6 w-6" />}
           />
           <FeatureCard
             accent="bg-ember-600 shadow-ember-600/30"
             title="Komunitas Publik"
             desc="Bagikan resep & hasil masakan ke feed komunitas, berinteraksi lewat suka, simpan, dan komentar."
-            icon={<IconUsers />}
+            icon={<Icon name="users" className="h-6 w-6" />}
           />
           <FeatureCard
             accent="bg-amber-500 shadow-amber-500/30"
             title="Foto & Cloudinary"
             desc="Pajang hasil masakanmu dengan foto cantik — penyimpanan gambar terkelola otomatis di cloud."
-            icon={<IconCamera />}
+            icon={<Icon name="camera" className="h-6 w-6" />}
           />
           <FeatureCard
             accent="bg-lime-600 shadow-lime-600/30"
             title="Pencarian Populer Gratis"
             desc="Temukan ribuan resep lewat pencarian bebas. Semua hasil tetap tampil penuh, tanpa paywall."
-            icon={<IconSearch />}
+            icon={<Icon name="search" className="h-6 w-6" />}
           />
           <FeatureCard
             accent="bg-yellow-500 shadow-yellow-500/30"
             title="Urutan Resep Terbaik"
             desc="Resep dengan peringkat komunitas tertinggi otomatis naik ke atas — gratis dilihat semua."
-            icon={<IconTrophy />}
+            icon={<Icon name="trophy" className="h-6 w-6" />}
           />
           <FeatureCard
             accent="bg-orange-500 shadow-orange-500/30"
             title="Masak Sekarang"
             desc="Tombol aksi satu ketukan untuk langsung mulai memasak resep favoritmu kapan saja."
-            icon={<IconCook />}
+            icon={<Icon name="cooking-pot" className="h-6 w-6" />}
           />
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="border-y border-cream-200 bg-cream-50">
-        <div className="mx-auto max-w-6xl px-4 py-20">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-spice-600">Cara Kerja</p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-stone-900 sm:text-4xl">
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-stone-900 sm:text-3xl md:text-4xl">
               Mulai dalam 3 langkah mudah
             </h2>
           </div>
@@ -248,7 +227,7 @@ export default function Landing() {
               {
                 n: '1',
                 t: 'Buat akun gratis',
-                d: 'Daftar dengan email atau satu ketukan via Google. Tanpa kartu kredit, tanpa syarat.',
+                d: 'Daftar dengan email gratis. Tanpa kartu kredit, tanpa syarat.',
                 icon: 'write',
               },
               {
@@ -264,11 +243,11 @@ export default function Landing() {
                 icon: 'flame',
               },
             ].map((s) => (
-              <div key={s.n} className="relative rounded-3xl border border-cream-200 bg-white p-7 text-center shadow-sm">
+              <div key={s.n} className="relative rounded-3xl border border-cream-200 bg-white p-5 text-center shadow-sm sm:p-7">
                 <span className="absolute -top-4 left-1/2 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-spice-600 text-sm font-bold text-white shadow">
                   {s.n}
                 </span>
-                 <Icon name={s.icon} className="h-10 w-10 text-spice-600" />
+                 <div className="flex justify-center"><Icon name={s.icon} className="h-10 w-10 text-spice-600" /></div>
                 <h3 className="mt-3 text-lg font-bold text-stone-900">{s.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-stone-600">{s.d}</p>
               </div>
@@ -278,8 +257,8 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-spice-600 via-ember-600 to-red-600 px-6 py-16 text-center shadow-2xl shadow-ember-600/30">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:py-16 md:py-20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-spice-600 via-ember-600 to-red-600 px-5 py-10 text-center shadow-2xl shadow-ember-600/30 sm:rounded-[2.5rem] sm:px-6 sm:py-16">
           <div className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
@@ -320,62 +299,3 @@ export default function Landing() {
   );
 }
 
-function Check({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`h-4 w-4 ${className}`}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-const iconProps = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, viewBox: '0 0 24 24', className: 'h-6 w-6' };
-function IconLock() {
-  return (
-    <svg {...iconProps}>
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-function IconUsers() {
-  return (
-    <svg {...iconProps}>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-function IconCamera() {
-  return (
-    <svg {...iconProps}>
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </svg>
-  );
-}
-function IconSearch() {
-  return (
-    <svg {...iconProps}>
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
-    </svg>
-  );
-}
-function IconTrophy() {
-  return (
-    <svg {...iconProps}>
-      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" />
-      <path d="M17 5h4v2a4 4 0 0 1-4 4M7 5H3v2a4 4 0 0 0 4 4" />
-    </svg>
-  );
-}
-function IconCook() {
-  return (
-    <svg {...iconProps}>
-      <path d="M12 2v8" />
-      <path d="M5 11h14v2a7 7 0 0 1-14 0z" />
-      <path d="M19 11c0-2-1-3-3-3M5 11c0-2 1-3 3-3" />
-    </svg>
-  );
-}
