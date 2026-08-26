@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import prisma from '../prisma.js';
 
@@ -55,5 +56,13 @@ export default class PrismaSessionStore extends EventEmitter {
     } catch (err) {
       callback(err);
     }
+  }
+
+  regenerate(req, callback) {
+    this.destroy(req.sessionID, (err) => {
+      if (err) return callback(err);
+      req.sessionID = randomBytes(16).toString('hex');
+      callback(null);
+    });
   }
 }
