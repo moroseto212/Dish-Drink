@@ -156,7 +156,7 @@ export default function Feed() {
           ))}
         </div>
       ) : recipes.length === 0 ? (
-        <div className="mt-16 rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-16 text-center">
+        <div className="mt-16 flex flex-col items-center rounded-3xl border border-dashed border-cream-300 bg-white px-6 py-16 text-center">
           <Icon name="food" className="h-12 w-12 text-stone-300" />
           <h2 className="mt-4 text-lg font-bold text-stone-900">Belum ada resep ditemukan</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
