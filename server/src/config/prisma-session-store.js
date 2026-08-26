@@ -1,6 +1,12 @@
+import { EventEmitter } from 'events';
 import prisma from '../prisma.js';
 
-export default class PrismaSessionStore {
+export default class PrismaSessionStore extends EventEmitter {
+  constructor() {
+    super();
+    process.nextTick(() => this.emit('connect'));
+  }
+
   async get(sid, callback) {
     try {
       const session = await prisma.session.findUnique({ where: { sid } });
