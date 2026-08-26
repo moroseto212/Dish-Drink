@@ -1,8 +1,9 @@
-import { randomBytes } from 'crypto';
-import { EventEmitter } from 'events';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const Store = require('express-session/session/store.js');
 import prisma from '../prisma.js';
 
-export default class PrismaSessionStore extends EventEmitter {
+export default class PrismaSessionStore extends Store {
   constructor() {
     super();
     process.nextTick(() => this.emit('connect'));
@@ -56,13 +57,5 @@ export default class PrismaSessionStore extends EventEmitter {
     } catch (err) {
       callback(err);
     }
-  }
-
-  regenerate(req, callback) {
-    this.destroy(req.sessionID, (err) => {
-      if (err) return callback(err);
-      req.sessionID = randomBytes(16).toString('hex');
-      callback(null);
-    });
   }
 }
