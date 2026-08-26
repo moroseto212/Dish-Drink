@@ -63,15 +63,13 @@ export async function login(req, res) {
 
       const signedSid = 's:' + cookieSignature.sign(req.sessionID, process.env.SESSION_SECRET);
       const maxAge = 1000 * 60 * 60 * 24 * 7;
-      const cookieParts = [
-        'connect.sid=' + signedSid,
-        'Path=/',
-        'HttpOnly',
-        'SameSite=Lax',
-        'Secure',
-        'Max-Age=' + Math.floor(maxAge / 1000),
-      ];
-      res.setHeader('Set-Cookie', cookieParts.join('; '));
+      res.cookie('connect.sid', signedSid, {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: maxAge,
+        path: '/',
+      });
 
       return res.json({ user: sanitizeUser(user) });
     });
@@ -89,7 +87,7 @@ export function logout(req, res) {
   req.logout((err) => {
     if (err) return res.status(500).json({ message: 'Gagal keluar' });
     req.session.destroy(() => {
-      res.clearCookie('connect.sid');
+      res.clearCookie('connect.sid', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', secure: process.env.NODE_ENV === 'production' });
       return res.json({ message: 'Berhasil keluar' });
     });
   });
@@ -137,7 +135,7 @@ export async function deleteAccount(req, res) {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: 'Gagal menghapus akun' });
       req.session.destroy(() => {
-        res.clearCookie('connect.sid');
+        res.clearCookie('connect.sid', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', secure: process.env.NODE_ENV === 'production' });
         return res.json({ message: 'Akun berhasil dihapus' });
       });
     });
