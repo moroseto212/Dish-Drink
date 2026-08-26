@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import cookieSignature from 'cookie-signature';
 import prisma from '../prisma.js';
 import { sanitizeUser } from '../utils/sanitize.js';
 
@@ -59,6 +60,19 @@ export async function login(req, res) {
 
     req.login(user, (err) => {
       if (err) return res.status(500).json({ message: 'Gagal membuat sesi' });
+
+      const signedSid = 's:' + cookieSignature.sign(req.sessionID, process.env.SESSION_SECRET);
+      const maxAge = 1000 * 60 * 60 * 24 * 7;
+      const cookieParts = [
+        'connect.sid=' + signedSid,
+        'Path=/',
+        'HttpOnly',
+        'SameSite=Lax',
+        'Secure',
+        'Max-Age=' + Math.floor(maxAge / 1000),
+      ];
+      res.setHeader('Set-Cookie', cookieParts.join('; '));
+
       return res.json({ user: sanitizeUser(user) });
     });
   } catch (err) {
