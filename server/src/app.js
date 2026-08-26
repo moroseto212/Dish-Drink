@@ -5,8 +5,7 @@ import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
 import passport from 'passport';
-import connectPgSimple from 'connect-pg-simple';
-import { pgPool } from './prisma.js';
+import PrismaSessionStore from './config/prisma-session-store.js';
 import './config/passport.js';
 import authRoutes from './routes/auth.js';
 import recipeRoutes from './routes/recipes.js';
@@ -22,7 +21,6 @@ if (!process.env.SESSION_SECRET) {
 }
 
 const app = express();
-const PgSession = connectPgSimple(session);
 
 app.set('trust proxy', 1);
 
@@ -37,11 +35,7 @@ app.use(express.json());
 
 app.use(
   session({
-    store: new PgSession({
-      pool: pgPool,
-      tableName: 'session',
-      createTableIfMissing: true,
-    }),
+    store: new PrismaSessionStore(),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,

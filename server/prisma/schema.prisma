@@ -192,3 +192,11 @@ model RecipeRating {
   @@id([userId, recipeId])
   @@index([recipeId])
 }
+
+model Session {
+  sid  String   @id
+  sess Json
+  expire DateTime
+
+  @@index([expire])
+}
