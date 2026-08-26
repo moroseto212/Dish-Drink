@@ -17,6 +17,10 @@ import conversationRoutes from './routes/conversations.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+if (!process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
 const app = express();
 const PgSession = connectPgSimple(session);
 
