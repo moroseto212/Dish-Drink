@@ -296,7 +296,7 @@ export default function Messages() {
                 ))}
               </div>
             ) : conversations.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-cream-300 bg-white px-5 py-10 text-center">
+              <div className="flex flex-col items-center rounded-2xl border border-dashed border-cream-300 bg-white px-5 py-10 text-center">
                 <span className="text-4xl"><Icon name="chat" className="h-10 w-10 text-stone-300" /></span>
                 <p className="mt-3 text-sm font-bold text-stone-900">Belum ada percakapan</p>
                 <p className="mt-1 text-xs text-stone-500">
