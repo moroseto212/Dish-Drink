@@ -1,11 +1,18 @@
 {
   "version": 2,
   "installCommand": "npm --prefix server install && npm --prefix client install",
-  "buildCommand": "cd client && npm run build",
+  "buildCommand": "npm --prefix server run prisma:deploy && cd client && npm run build",
   "outputDirectory": "client/dist",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.mjs" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.mjs" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
   ]
 }
