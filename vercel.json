@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "npm --prefix server install && npm --prefix client install",
-  "buildCommand": "npm --prefix server run prisma:deploy && cd client && npm run build",
+  "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.mjs" },

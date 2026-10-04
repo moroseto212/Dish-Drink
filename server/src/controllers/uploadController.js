@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import cloudinary from '../config/cloudinary.js';
+import supabase from '../config/supabase.js';
 import prisma from '../prisma.js';
 import { sanitizeUser } from '../utils/sanitize.js';
 
@@ -12,7 +13,19 @@ export async function uploadAvatar(req, res) {
 
     let avatarUrl;
 
-    if (cloudinary) {
+    if (supabase) {
+      const ext = path.extname(req.file.originalname) || '.jpg';
+      const filename = `${req.user.id}-${Date.now()}${ext}`;
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(`Avatars/${filename}`, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true,
+        });
+      if (error) throw error;
+      const publicUrl = supabase.storage.from('avatars').getPublicUrl(`Avatars/${filename}`).data.publicUrl;
+      avatarUrl = publicUrl;
+    } else if (cloudinary) {
       const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const result = await cloudinary.uploader.upload(dataUri, {
         folder: 'dish-drink/avatars',
@@ -48,7 +61,18 @@ export async function uploadCover(req, res) {
 
     let url;
 
-    if (cloudinary) {
+    if (supabase) {
+      const ext = path.extname(req.file.originalname) || '.jpg';
+      const filename = `${req.user.id}-${Date.now()}${ext}`;
+      const { data, error } = await supabase.storage
+        .from('covers')
+        .upload(`Covers/${filename}`, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true,
+        });
+      if (error) throw error;
+      url = supabase.storage.from('covers').getPublicUrl(`Covers/${filename}`).data.publicUrl;
+    } else if (cloudinary) {
       const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const result = await cloudinary.uploader.upload(dataUri, {
         folder: 'dish-drink/covers',
