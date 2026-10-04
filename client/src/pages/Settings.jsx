@@ -70,8 +70,7 @@ export default function Settings() {
     }
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
+  const handleChangePassword = async () => {
     setError('');
     setPwSuccess('');
     if (newPassword !== confirmPassword) {
@@ -206,7 +205,7 @@ export default function Settings() {
                 </div>
               )}
 
-              <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
+              <div className="mt-4 space-y-4">
                 <div>
                   <label htmlFor="current-pw" className="mb-1.5 block text-sm font-semibold text-stone-700">Password lama</label>
                   <input
@@ -243,13 +242,14 @@ export default function Settings() {
                   />
                 </div>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleChangePassword}
                   disabled={pwLoading || !currentPassword || !newPassword || !confirmPassword}
                   className="rounded-full bg-amber-500 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   {pwLoading ? 'Mengubah…' : 'Ubah Password'}
                 </button>
-              </form>
+              </div>
             </section>
           )}
 

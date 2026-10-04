@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import cookieSignature from 'cookie-signature';
 import prisma from '../prisma.js';
 import { sanitizeUser } from '../utils/sanitize.js';
 
@@ -59,6 +60,17 @@ export async function login(req, res) {
 
     req.login(user, (err) => {
       if (err) return res.status(500).json({ message: 'Gagal membuat sesi' });
+
+      const signedSid = 's:' + cookieSignature.sign(req.sessionID, process.env.SESSION_SECRET);
+      const maxAge = 1000 * 60 * 60 * 24 * 7;
+      res.cookie('connect.sid', signedSid, {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: maxAge,
+        path: '/',
+      });
+
       return res.json({ user: sanitizeUser(user) });
     });
   } catch (err) {
@@ -75,7 +87,7 @@ export function logout(req, res) {
   req.logout((err) => {
     if (err) return res.status(500).json({ message: 'Gagal keluar' });
     req.session.destroy(() => {
-      res.clearCookie('connect.sid');
+      res.clearCookie('connect.sid', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', secure: process.env.NODE_ENV === 'production' });
       return res.json({ message: 'Berhasil keluar' });
     });
   });
@@ -123,7 +135,7 @@ export async function deleteAccount(req, res) {
     req.logout((err) => {
       if (err) return res.status(500).json({ message: 'Gagal menghapus akun' });
       req.session.destroy(() => {
-        res.clearCookie('connect.sid');
+        res.clearCookie('connect.sid', { path: '/', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', secure: process.env.NODE_ENV === 'production' });
         return res.json({ message: 'Akun berhasil dihapus' });
       });
     });

@@ -26,7 +26,7 @@ app.set('trust proxy', 1);
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL || 'http://localhost:5174',
     credentials: true,
   })
 );
@@ -39,10 +39,11 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: 'auto',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   })

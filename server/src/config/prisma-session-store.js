@@ -1,8 +1,7 @@
-import session from 'express-session';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const Store = require('express-session/session/store.js');
 import prisma from '../prisma.js';
-
-const { Store } = session;
-
 export default class PrismaSessionStore extends Store {
   constructor() {
     super();
